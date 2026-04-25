@@ -9,7 +9,7 @@ describe("compareAll", () => {
     for (const s of [r.ownership, r.privateLease, r.businessLease]) {
       expect(Number.isFinite(s.netMonthly)).toBe(true);
       expect(Number.isFinite(s.grossMonthly)).toBe(true);
-      expect(Number.isFinite(s.fiveYearTotal)).toBe(true);
+      expect(Number.isFinite(s.totalCost)).toBe(true);
     }
   });
 
@@ -32,6 +32,75 @@ describe("compareAll", () => {
       vehicle: { ...DEFAULTS.vehicle, annualKm: DEFAULTS.vehicle.annualKm * 2 },
     });
     expect(more.ownership.netMonthly).toBeGreaterThan(base.ownership.netMonthly);
+  });
+
+  it("opportunity cost increases ownership net cost (capital tied up)", () => {
+    const noOpp = compareAll({ ...DEFAULTS, opportunityCostRate: 0 });
+    const withOpp = compareAll({ ...DEFAULTS, opportunityCostRate: 0.05 });
+    expect(withOpp.ownership.netMonthly).toBeGreaterThan(noOpp.ownership.netMonthly);
+  });
+
+  it("opportunity cost increases private lease cost when there's a down payment", () => {
+    const inputs = {
+      ...DEFAULTS,
+      privateLease: { ...DEFAULTS.privateLease, downPayment: 5_000 },
+    };
+    const noOpp = compareAll({ ...inputs, opportunityCostRate: 0 });
+    const withOpp = compareAll({ ...inputs, opportunityCostRate: 0.05 });
+    expect(withOpp.privateLease.netMonthly).toBeGreaterThan(noOpp.privateLease.netMonthly);
+  });
+
+  it("opportunity cost does not affect business lease (no capital tied up)", () => {
+    const noOpp = compareAll({ ...DEFAULTS, opportunityCostRate: 0 });
+    const withOpp = compareAll({ ...DEFAULTS, opportunityCostRate: 0.1 });
+    expect(withOpp.businessLease.netMonthly).toBe(noOpp.businessLease.netMonthly);
+  });
+
+  it("salary sacrifice increases business lease net cost", () => {
+    const noSacrifice = compareAll(DEFAULTS);
+    const withSacrifice = compareAll({
+      ...DEFAULTS,
+      businessLease: { ...DEFAULTS.businessLease, salarySacrificeMonthly: 500 },
+    });
+    expect(withSacrifice.businessLease.netMonthly).toBeGreaterThan(
+      noSacrifice.businessLease.netMonthly,
+    );
+  });
+
+  it("salary sacrifice net cost is less than the gross sacrifice (tax saved)", () => {
+    const noSacrifice = compareAll(DEFAULTS);
+    const sacrificeAmount = 500;
+    const withSacrifice = compareAll({
+      ...DEFAULTS,
+      businessLease: {
+        ...DEFAULTS.businessLease,
+        salarySacrificeMonthly: sacrificeAmount,
+      },
+    });
+    const delta =
+      withSacrifice.businessLease.netMonthly - noSacrifice.businessLease.netMonthly;
+    expect(delta).toBeGreaterThan(0);
+    expect(delta).toBeLessThan(sacrificeAmount);
+  });
+
+  it("totalCost honours the comparisonMonths horizon for all scenarios", () => {
+    const r36 = compareAll({ ...DEFAULTS, comparisonMonths: 36 });
+    const r60 = compareAll({ ...DEFAULTS, comparisonMonths: 60 });
+    for (const key of ["ownership", "privateLease", "businessLease"] as const) {
+      expect(r36[key].totalCost).toBeCloseTo(r36[key].netMonthly * 36, 5);
+      expect(r60[key].totalCost).toBeCloseTo(r60[key].netMonthly * 60, 5);
+    }
+  });
+
+  it("ownership totalCost no longer truncates when holding < comparison horizon", () => {
+    // Previously: ownership.fiveYearTotal = netMonthly * min(60, holdingMonths),
+    // which made a 36-month holding look 24 months cheaper than a 60-month lease.
+    const r = compareAll({
+      ...DEFAULTS,
+      vehicle: { ...DEFAULTS.vehicle, holdingMonths: 36 },
+      comparisonMonths: 60,
+    });
+    expect(r.ownership.totalCost).toBeCloseTo(r.ownership.netMonthly * 60, 5);
   });
 });
 

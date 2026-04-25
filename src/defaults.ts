@@ -48,8 +48,11 @@ export const DEFAULTS: AppInputs = {
     fuelCardPrivate: true,
     role: "employee",
     rittenregistratie: false,
+    salarySacrificeMonthly: 0,
   },
   reimbursement: {
     ratePerKm: 0.23,
   },
+  opportunityCostRate: 0.04,
+  comparisonMonths: 60,
 };

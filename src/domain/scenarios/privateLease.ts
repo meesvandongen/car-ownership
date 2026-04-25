@@ -11,6 +11,11 @@ export function evaluatePrivateLease(
 
   const monthlyDownPayment = privateLease.downPayment / privateLease.contractMonths;
 
+  // Opportunity cost on the down payment: it's paid up-front and amortized
+  // linearly over the contract, so average tied-up capital is downPayment/2.
+  const monthlyOpportunityCost =
+    ((privateLease.downPayment / 2) * inputs.opportunityCostRate) / 12;
+
   const fuelAnnual = annualFuelCost(vehicle, ownership);
   const monthlyFuel = fuelAnnual / 12;
 
@@ -33,20 +38,25 @@ export function evaluatePrivateLease(
   const monthlyReimbursement = reimbursementAnnual / 12 + excessNetGain / 12;
 
   const grossMonthly =
-    privateLease.monthlyPayment + monthlyDownPayment + monthlyFuel + monthlyExcessKm;
+    privateLease.monthlyPayment +
+    monthlyDownPayment +
+    monthlyFuel +
+    monthlyExcessKm +
+    monthlyOpportunityCost;
   const netMonthly = grossMonthly - monthlyReimbursement;
 
   return {
     name: "privateLease",
     grossMonthly,
     netMonthly,
-    fiveYearTotal: netMonthly * 60,
+    totalCost: netMonthly * inputs.comparisonMonths,
     costPerKm: vehicle.annualKm > 0 ? (netMonthly * 12) / vehicle.annualKm : 0,
     breakdown: [
       { label: "Lease payment", monthly: privateLease.monthlyPayment },
       { label: "Down payment (amortized)", monthly: monthlyDownPayment },
       { label: "Fuel/electricity", monthly: monthlyFuel },
       { label: "Excess km", monthly: monthlyExcessKm },
+      { label: "Opportunity cost (down payment)", monthly: monthlyOpportunityCost },
       { label: "Reimbursement received", monthly: -monthlyReimbursement },
     ],
     warnings: [

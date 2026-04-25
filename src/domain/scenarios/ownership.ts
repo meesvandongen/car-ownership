@@ -47,6 +47,16 @@ export function evaluateOwnership(
     data,
   );
 
+  // Opportunity cost on capital tied up in the vehicle. Linear depreciation
+  // means own-equity in the car runs from `downPayment` (at t=0, with the
+  // financed portion borrowed) to `residualValue` (at end-of-holding, loan
+  // assumed paid off). Average tied-up own capital ≈ (downPayment + residualValue)/2.
+  // This captures the foregone return on cash that's locked into a depreciating asset.
+  const cappedDownPayment = Math.min(ownership.downPayment, vehicle.aanschafprijs);
+  const averageOwnCapital = (cappedDownPayment + vehicle.residualValue) / 2;
+  const monthlyOpportunityCost =
+    (averageOwnCapital * inputs.opportunityCostRate) / 12;
+
   // Fuel / electricity
   const fuelAnnual = annualFuelCost(vehicle, ownership);
 
@@ -78,7 +88,8 @@ export function evaluateOwnership(
     monthlyMrb +
     monthlyInsurance +
     monthlyMaintenance +
-    monthlyFuel;
+    monthlyFuel +
+    monthlyOpportunityCost;
 
   const netMonthly = grossMonthly - monthlyReimbursement;
 
@@ -86,7 +97,7 @@ export function evaluateOwnership(
     name: "ownership",
     grossMonthly,
     netMonthly,
-    fiveYearTotal: netMonthly * Math.min(60, vehicle.holdingMonths),
+    totalCost: netMonthly * inputs.comparisonMonths,
     costPerKm: vehicle.annualKm > 0 ? (netMonthly * 12) / vehicle.annualKm : 0,
     breakdown: [
       { label: "Depreciation", monthly: monthlyDepreciation },
@@ -95,6 +106,7 @@ export function evaluateOwnership(
       { label: "Insurance", monthly: monthlyInsurance },
       { label: "Maintenance", monthly: monthlyMaintenance },
       { label: "Fuel/electricity", monthly: monthlyFuel },
+      { label: "Opportunity cost (capital tied up)", monthly: monthlyOpportunityCost },
       { label: "Reimbursement received", monthly: -monthlyReimbursement },
     ],
     warnings:

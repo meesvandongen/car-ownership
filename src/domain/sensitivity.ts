@@ -13,7 +13,9 @@ export type SweepableNumeric =
   | "fuelCostPerLiter"
   | "monthlyLeaseTariff"
   | "monthlyPayment"
-  | "eigenBijdrage";
+  | "eigenBijdrage"
+  | "salarySacrificeMonthly"
+  | "opportunityCostRate";
 
 export interface SweepPoint {
   x: number;
@@ -48,6 +50,11 @@ const VARIABLE_PATHS: Record<SweepableNumeric, (i: AppInputs, v: number) => AppI
     ...i,
     businessLease: { ...i.businessLease, eigenBijdrage: v },
   }),
+  salarySacrificeMonthly: (i, v) => ({
+    ...i,
+    businessLease: { ...i.businessLease, salarySacrificeMonthly: v },
+  }),
+  opportunityCostRate: (i, v) => ({ ...i, opportunityCostRate: v }),
 };
 
 export function getCurrentValue(inputs: AppInputs, variable: SweepableNumeric): number {
@@ -76,6 +83,10 @@ export function getCurrentValue(inputs: AppInputs, variable: SweepableNumeric): 
       return inputs.privateLease.monthlyPayment;
     case "eigenBijdrage":
       return inputs.businessLease.eigenBijdrage;
+    case "salarySacrificeMonthly":
+      return inputs.businessLease.salarySacrificeMonthly;
+    case "opportunityCostRate":
+      return inputs.opportunityCostRate;
   }
 }
 
