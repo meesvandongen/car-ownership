@@ -1,0 +1,112 @@
+{
+  "year": 2026,
+  "lastVerified": "2026-04-25",
+  "incomeTax": {
+    "withAow": false,
+    "brackets": [
+      { "upTo": 38883, "rate": 0.3576 },
+      { "upTo": 79137, "rate": 0.3756 },
+      { "upTo": null, "rate": 0.495 }
+    ],
+    "algemeneHeffingskorting": {
+      "max": 3068,
+      "phaseOutStart": 28406,
+      "phaseOutEnd": 76817,
+      "phaseOutRate": 0.0633
+    },
+    "arbeidskorting": {
+      "buildupRate": 0.0871,
+      "max": 5599,
+      "phaseOutStart": 43071,
+      "phaseOutEnd": 129078,
+      "phaseOutRate": 0.0651
+    }
+  },
+  "bijtelling": {
+    "ratesByRegistrationYear": {
+      "2025": { "ev": 0.17, "evCap": 30000, "above": 0.22, "combustion": 0.22 },
+      "2026": { "ev": 0.18, "evCap": 30000, "above": 0.22, "combustion": 0.22 },
+      "2027": { "ev": 0.20, "evCap": 30000, "above": 0.22, "combustion": 0.22 },
+      "2028": { "ev": 0.22, "evCap": null, "above": 0.22, "combustion": 0.22 },
+      "2029": { "ev": 0.22, "evCap": null, "above": 0.22, "combustion": 0.22 },
+      "2030": { "ev": 0.22, "evCap": null, "above": 0.22, "combustion": 0.22 }
+    },
+    "hydrogenSolarRate": 0.18,
+    "youngtimerRate": 0.35,
+    "youngtimerMinAgeYears": 16,
+    "lockMonths": 60
+  },
+  "mrb": {
+    "weightTable": [
+      { "upTo": 600, "quarterly": 21 },
+      { "upTo": 700, "quarterly": 32 },
+      { "upTo": 800, "quarterly": 49 },
+      { "upTo": 900, "quarterly": 65 },
+      { "upTo": 1000, "quarterly": 79 },
+      { "upTo": 1100, "quarterly": 100 },
+      { "upTo": 1200, "quarterly": 119 },
+      { "upTo": 1300, "quarterly": 142 },
+      { "upTo": 1400, "quarterly": 168 },
+      { "upTo": 1500, "quarterly": 196 },
+      { "upTo": 1600, "quarterly": 226 },
+      { "upTo": 1700, "quarterly": 257 },
+      { "upTo": 1800, "quarterly": 290 },
+      { "upTo": 1900, "quarterly": 323 },
+      { "upTo": 2000, "quarterly": 358 },
+      { "upTo": 2100, "quarterly": 393 },
+      { "upTo": 2200, "quarterly": 430 },
+      { "upTo": 2300, "quarterly": 467 },
+      { "upTo": 2500, "quarterly": 537 },
+      { "upTo": 3000, "quarterly": 720 }
+    ],
+    "powertrainMultipliers": {
+      "ev": 0.70,
+      "hydrogen": 0.70,
+      "phev": 1.00,
+      "petrol": 1.00,
+      "diesel": 1.30,
+      "lpg": 1.40
+    },
+    "evKortingByYear": {
+      "2026": 0.30,
+      "2027": 0.30,
+      "2028": 0.30,
+      "2029": 0.25,
+      "2030": 0
+    }
+  },
+  "provinces": {
+    "Drenthe": 0.92,
+    "Flevoland": 0.84,
+    "Friesland": 0.92,
+    "Gelderland": 1.01,
+    "Groningen": 1.05,
+    "Limburg": 0.93,
+    "Noord-Brabant": 0.81,
+    "Noord-Holland": 0.78,
+    "Overijssel": 0.85,
+    "Utrecht": 0.86,
+    "Zeeland": 0.94,
+    "Zuid-Holland": 1.02
+  },
+  "bpm": {
+    "evFixed": 685,
+    "hydrogenFixed": 685,
+    "co2Brackets": [
+      { "upToCo2": 71, "ratePerGram": 2.5, "fixed": 440 },
+      { "upToCo2": 95, "ratePerGram": 75, "fixed": 0 },
+      { "upToCo2": 139, "ratePerGram": 162, "fixed": 0 },
+      { "upToCo2": 159, "ratePerGram": 311, "fixed": 0 },
+      { "upToCo2": null, "ratePerGram": 622, "fixed": 0 }
+    ],
+    "dieselSurchargePerGramAbove": { "threshold": 50, "rate": 122.94 },
+    "phevSurchargePerGram": 38
+  },
+  "reimbursement": {
+    "taxFreePerKm": 0.23
+  },
+  "pseudoEindheffing": {
+    "fromYear": 2027,
+    "rate": 0.12
+  }
+}
