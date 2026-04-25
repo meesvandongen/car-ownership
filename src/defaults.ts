@@ -1,0 +1,55 @@
+import type { AppInputs } from "./domain/types";
+
+export const DEFAULTS: AppInputs = {
+  taxYear: 2026,
+  vehicle: {
+    catalogusprijs: 45_000,
+    aanschafprijs: 42_000,
+    powertrain: "ev",
+    co2: 0,
+    weightKg: 1850,
+    detYear: 2026,
+    province: "Overijssel",
+    holdingMonths: 60,
+    residualValue: 18_000,
+    annualKm: 18_000,
+    businessKm: 6_000,
+    commuteKm: 8_000,
+    privateKm: 4_000,
+  },
+  salary: {
+    bruto: 65_000,
+    aowAge: false,
+    fiscalPartner: false,
+    hypotheekrenteAftrek: 0,
+  },
+  ownership: {
+    downPayment: 10_000,
+    interestRate: 0.065,
+    loanTermMonths: 60,
+    insurancePerMonth: 95,
+    maintenancePerYear: 800,
+    electricityCostPerKwh: 0.28,
+    fuelCostPerLiter: 2.05,
+    consumptionKwhPer100km: 18,
+    consumptionLper100km: 6.5,
+  },
+  privateLease: {
+    monthlyPayment: 599,
+    contractMonths: 48,
+    contractKmPerYear: 15_000,
+    excessKmTariff: 0.12,
+    eigenRisico: 250,
+    downPayment: 0,
+  },
+  businessLease: {
+    monthlyLeaseTariff: 750,
+    eigenBijdrage: 0,
+    fuelCardPrivate: true,
+    role: "employee",
+    rittenregistratie: false,
+  },
+  reimbursement: {
+    ratePerKm: 0.23,
+  },
+};
