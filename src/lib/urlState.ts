@@ -36,7 +36,10 @@ const KEYS: { path: string[]; key: string }[] = [
   { path: ["businessLease", "fuelCardPrivate"], key: "fcp" },
   { path: ["businessLease", "rittenregistratie"], key: "rit" },
   { path: ["businessLease", "role"], key: "role" },
+  { path: ["businessLease", "salarySacrificeMonthly"], key: "sac" },
   { path: ["reimbursement", "ratePerKm"], key: "reim" },
+  { path: ["opportunityCostRate"], key: "ocr" },
+  { path: ["comparisonMonths"], key: "cmp" },
 ];
 
 function getAt(obj: Record<string, unknown>, path: string[]): unknown {

@@ -110,6 +110,28 @@
 </div>
 
 <div class="panel">
+  <h2>Comparison assumptions</h2>
+  <div class="field-grid">
+    <label>
+      Opportunity cost rate (%/yr)
+      <input
+        type="number"
+        bind:value={
+          () => inputs.opportunityCostRate * 100,
+          (v) => (inputs.opportunityCostRate = (v ?? 0) / 100)
+        }
+        min="0"
+        step="0.1"
+      />
+    </label>
+    <label>
+      Comparison horizon (months)
+      <input type="number" bind:value={inputs.comparisonMonths} min="1" step="1" />
+    </label>
+  </div>
+</div>
+
+<div class="panel">
   <h2>Ownership</h2>
   <div class="field-grid">
     <label>
@@ -195,6 +217,15 @@
     <label>
       Eigen bijdrage (€/month)
       <input type="number" bind:value={inputs.businessLease.eigenBijdrage} min="0" step="10" />
+    </label>
+    <label>
+      Salary sacrifice (€/month bruto)
+      <input
+        type="number"
+        bind:value={inputs.businessLease.salarySacrificeMonthly}
+        min="0"
+        step="10"
+      />
     </label>
     <label>
       Role
