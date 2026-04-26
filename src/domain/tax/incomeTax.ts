@@ -10,12 +10,11 @@ export interface IncomeTaxResult {
 }
 
 export function computeBox1Tax(income: number, data: TaxData): number {
-  let remaining = Math.max(0, income);
   let tax = 0;
   let lower = 0;
   for (const bracket of data.incomeTax.brackets) {
     const upper = bracket.upTo ?? Infinity;
-    const slice = Math.max(0, Math.min(remaining + lower, upper) - lower);
+    const slice = Math.max(0, Math.min(income, upper) - lower);
     tax += slice * bracket.rate;
     lower = upper;
     if (income <= upper) break;
