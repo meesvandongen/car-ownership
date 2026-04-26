@@ -1,13 +1,15 @@
-import type { AppInputs, ScenarioResult } from "../types";
+import type { AppInputs, Scenario, ScenarioResult } from "../types";
 import type { TaxData } from "../taxData";
 import { computeIncomeTax } from "../tax/incomeTax";
 import { annualFuelCost } from "./fuel";
 
 export function evaluatePrivateLease(
   inputs: AppInputs,
+  scenario: Scenario,
   data: TaxData,
 ): ScenarioResult {
-  const { vehicle, privateLease, ownership, reimbursement, salary } = inputs;
+  const { drivingProfile, reimbursement, salary, energy } = inputs;
+  const { vehicle, privateLease } = scenario;
 
   const monthlyDownPayment = privateLease.downPayment / privateLease.contractMonths;
 
@@ -16,22 +18,25 @@ export function evaluatePrivateLease(
   const monthlyOpportunityCost =
     ((privateLease.downPayment / 2) * inputs.opportunityCostRate) / 12;
 
-  const fuelAnnual = annualFuelCost(vehicle, ownership);
+  const fuelAnnual = annualFuelCost(vehicle, drivingProfile, energy);
   const monthlyFuel = fuelAnnual / 12;
 
   // Excess km charge (if annualKm > contractKmPerYear)
-  const excessKmAnnual = Math.max(0, vehicle.annualKm - privateLease.contractKmPerYear);
+  const excessKmAnnual = Math.max(
+    0,
+    drivingProfile.annualKm - privateLease.contractKmPerYear,
+  );
   const monthlyExcessKm = (excessKmAnnual * privateLease.excessKmTariff) / 12;
 
   // Reimbursement (same untaxed cap as ownership)
   const reimbursementAnnual =
     Math.min(reimbursement.ratePerKm, data.reimbursement.taxFreePerKm) *
-    vehicle.businessKm;
+    drivingProfile.businessKm;
   const taxableExcessRate = Math.max(
     0,
     reimbursement.ratePerKm - data.reimbursement.taxFreePerKm,
   );
-  const taxableExcessAnnual = taxableExcessRate * vehicle.businessKm;
+  const taxableExcessAnnual = taxableExcessRate * drivingProfile.businessKm;
   const baseTax = computeIncomeTax(salary.bruto, data);
   const withExcess = computeIncomeTax(salary.bruto + taxableExcessAnnual, data);
   const excessNetGain = withExcess.netIncome - baseTax.netIncome;
@@ -46,11 +51,16 @@ export function evaluatePrivateLease(
   const netMonthly = grossMonthly - monthlyReimbursement;
 
   return {
-    name: "privateLease",
+    id: scenario.id,
+    label: scenario.label,
+    kind: "privateLease",
     grossMonthly,
     netMonthly,
     totalCost: netMonthly * inputs.comparisonMonths,
-    costPerKm: vehicle.annualKm > 0 ? (netMonthly * 12) / vehicle.annualKm : 0,
+    costPerKm:
+      drivingProfile.annualKm > 0
+        ? (netMonthly * 12) / drivingProfile.annualKm
+        : 0,
     breakdown: [
       { label: "Lease payment", monthly: privateLease.monthlyPayment },
       { label: "Down payment (amortized)", monthly: monthlyDownPayment },

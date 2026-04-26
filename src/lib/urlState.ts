@@ -1,42 +1,19 @@
-import type { AppInputs } from "../domain/types";
+import type { AppInputs, Scenario } from "../domain/types";
+import { newScenarioId } from "../defaults";
 
-const KEYS: { path: string[]; key: string }[] = [
+const SHARED_KEYS: { path: string[]; key: string }[] = [
   { path: ["taxYear"], key: "ty" },
-  { path: ["vehicle", "catalogusprijs"], key: "cat" },
-  { path: ["vehicle", "aanschafprijs"], key: "ans" },
-  { path: ["vehicle", "powertrain"], key: "pt" },
-  { path: ["vehicle", "co2"], key: "co2" },
-  { path: ["vehicle", "weightKg"], key: "wt" },
-  { path: ["vehicle", "detYear"], key: "det" },
-  { path: ["vehicle", "province"], key: "prov" },
-  { path: ["vehicle", "holdingMonths"], key: "hold" },
-  { path: ["vehicle", "residualValue"], key: "rv" },
-  { path: ["vehicle", "annualKm"], key: "km" },
-  { path: ["vehicle", "businessKm"], key: "bkm" },
-  { path: ["vehicle", "commuteKm"], key: "ckm" },
-  { path: ["vehicle", "privateKm"], key: "pkm" },
+  { path: ["drivingProfile", "province"], key: "prov" },
+  { path: ["drivingProfile", "annualKm"], key: "km" },
+  { path: ["drivingProfile", "businessKm"], key: "bkm" },
+  { path: ["drivingProfile", "commuteKm"], key: "ckm" },
+  { path: ["drivingProfile", "privateKm"], key: "pkm" },
   { path: ["salary", "bruto"], key: "bruto" },
   { path: ["salary", "aowAge"], key: "aow" },
-  { path: ["ownership", "downPayment"], key: "dp" },
-  { path: ["ownership", "interestRate"], key: "ir" },
-  { path: ["ownership", "loanTermMonths"], key: "lt" },
-  { path: ["ownership", "insurancePerMonth"], key: "ins" },
-  { path: ["ownership", "maintenancePerYear"], key: "maint" },
-  { path: ["ownership", "electricityCostPerKwh"], key: "kwh" },
-  { path: ["ownership", "fuelCostPerLiter"], key: "ltr" },
-  { path: ["ownership", "consumptionKwhPer100km"], key: "kwh100" },
-  { path: ["ownership", "consumptionLper100km"], key: "l100" },
-  { path: ["privateLease", "monthlyPayment"], key: "plm" },
-  { path: ["privateLease", "contractMonths"], key: "plct" },
-  { path: ["privateLease", "contractKmPerYear"], key: "plkm" },
-  { path: ["privateLease", "excessKmTariff"], key: "plex" },
-  { path: ["privateLease", "downPayment"], key: "pldp" },
-  { path: ["businessLease", "monthlyLeaseTariff"], key: "blm" },
-  { path: ["businessLease", "eigenBijdrage"], key: "eb" },
-  { path: ["businessLease", "fuelCardPrivate"], key: "fcp" },
-  { path: ["businessLease", "rittenregistratie"], key: "rit" },
-  { path: ["businessLease", "role"], key: "role" },
-  { path: ["businessLease", "salarySacrificeMonthly"], key: "sac" },
+  { path: ["salary", "fiscalPartner"], key: "fp" },
+  { path: ["salary", "hypotheekrenteAftrek"], key: "hra" },
+  { path: ["energy", "electricityCostPerKwh"], key: "kwh" },
+  { path: ["energy", "fuelCostPerLiter"], key: "ltr" },
   { path: ["reimbursement", "ratePerKm"], key: "reim" },
   { path: ["opportunityCostRate"], key: "ocr" },
   { path: ["comparisonMonths"], key: "cmp" },
@@ -63,18 +40,34 @@ function setAt(obj: Record<string, unknown>, path: string[], value: unknown): vo
 
 export function serializeToUrl(inputs: AppInputs): string {
   const params = new URLSearchParams();
-  for (const { path, key } of KEYS) {
+  for (const { path, key } of SHARED_KEYS) {
     const v = getAt(inputs as unknown as Record<string, unknown>, path);
     if (v === undefined || v === null) continue;
     params.set(key, String(v));
   }
+  // Scenarios: strip the runtime-only `id` field; on load we generate fresh ids.
+  const slim = inputs.scenarios.map(({ id: _id, ...rest }) => rest);
+  params.set("s", JSON.stringify(slim));
   return params.toString();
+}
+
+function isScenarioLike(v: unknown): v is Omit<Scenario, "id"> {
+  if (!v || typeof v !== "object") return false;
+  const o = v as Record<string, unknown>;
+  return (
+    typeof o.label === "string" &&
+    typeof o.kind === "string" &&
+    typeof o.vehicle === "object" &&
+    typeof o.ownership === "object" &&
+    typeof o.privateLease === "object" &&
+    typeof o.businessLease === "object"
+  );
 }
 
 export function applyUrlToInputs(base: AppInputs, search: string): AppInputs {
   const next = structuredClone(base);
   const params = new URLSearchParams(search);
-  for (const { path, key } of KEYS) {
+  for (const { path, key } of SHARED_KEYS) {
     if (!params.has(key)) continue;
     const raw = params.get(key)!;
     const existing = getAt(next as unknown as Record<string, unknown>, path);
@@ -89,6 +82,20 @@ export function applyUrlToInputs(base: AppInputs, search: string): AppInputs {
       );
     } else {
       setAt(next as unknown as Record<string, unknown>, path, raw);
+    }
+  }
+  const sRaw = params.get("s");
+  if (sRaw) {
+    try {
+      const parsed = JSON.parse(sRaw);
+      if (Array.isArray(parsed) && parsed.length > 0 && parsed.every(isScenarioLike)) {
+        next.scenarios = parsed.map((s) => ({
+          id: newScenarioId(),
+          ...(s as Omit<Scenario, "id">),
+        }));
+      }
+    } catch {
+      // ignore malformed scenarios payload, keep defaults
     }
   }
   return next;

@@ -1,31 +1,30 @@
 <script lang="ts">
-  import type { CompareResult, ScenarioResult } from "../domain/types";
+  import type { CompareResult, ScenarioKind } from "../domain/types";
   import { formatEuro, formatEuroPrecise } from "../lib/format";
 
   let { result }: { result: CompareResult } = $props();
 
-  const SCENARIOS: { key: keyof CompareResult; title: string }[] = [
-    { key: "ownership", title: "Private ownership" },
-    { key: "privateLease", title: "Private lease" },
-    { key: "businessLease", title: "Business lease" },
-  ];
+  const KIND_LABELS: Record<ScenarioKind, string> = {
+    ownership: "Private ownership",
+    privateLease: "Private lease",
+    businessLease: "Business lease",
+  };
 
-  function cheapestKey(r: CompareResult): keyof CompareResult {
-    const arr: [keyof CompareResult, number][] = [
-      ["ownership", r.ownership.netMonthly],
-      ["privateLease", r.privateLease.netMonthly],
-      ["businessLease", r.businessLease.netMonthly],
-    ];
-    arr.sort((a, b) => a[1] - b[1]);
-    return arr[0][0];
-  }
+  const cheapestId = $derived.by(() => {
+    if (result.scenarios.length === 0) return undefined;
+    return result.scenarios.reduce((best, s) =>
+      s.netMonthly < best.netMonthly ? s : best,
+    ).id;
+  });
 </script>
 
 <div class="cards">
-  {#each SCENARIOS as { key, title }}
-    {@const scenario = result[key] as ScenarioResult}
-    <div class="card" class:best={cheapestKey(result) === key}>
-      <h3>{title}</h3>
+  {#each result.scenarios as scenario (scenario.id)}
+    <div class="card" class:best={cheapestId === scenario.id}>
+      <div class="card-head">
+        <h3>{scenario.label}</h3>
+        <span class="kind-tag tag-{scenario.kind}">{KIND_LABELS[scenario.kind]}</span>
+      </div>
       <div class="net">{formatEuro(scenario.netMonthly)}<span>/month net</span></div>
       <div class="muted">
         Gross {formatEuro(scenario.grossMonthly)} · {formatEuroPrecise(scenario.costPerKm)}/km
@@ -79,6 +78,40 @@
   }
   .card.best {
     border-color: var(--good);
+  }
+  .card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .card-head h3 {
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .kind-tag {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .tag-ownership {
+    border-color: #58a6ff;
+    color: #58a6ff;
+  }
+  .tag-privateLease {
+    border-color: #3fb950;
+    color: #3fb950;
+  }
+  .tag-businessLease {
+    border-color: #d29922;
+    color: #d29922;
   }
   .net {
     font-size: 28px;

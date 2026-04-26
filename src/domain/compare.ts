@@ -1,26 +1,47 @@
-import type { AppInputs, CompareResult } from "./types";
+import type { AppInputs, CompareResult, Scenario, ScenarioResult } from "./types";
 import { getTaxData } from "./taxData";
 import { evaluateOwnership } from "./scenarios/ownership";
 import { evaluatePrivateLease } from "./scenarios/privateLease";
 import { evaluateBusinessLease } from "./scenarios/businessLease";
+import type { TaxData } from "./taxData";
+
+export function evaluateScenario(
+  inputs: AppInputs,
+  scenario: Scenario,
+  data: TaxData,
+): ScenarioResult {
+  switch (scenario.kind) {
+    case "ownership":
+      return evaluateOwnership(inputs, scenario, data);
+    case "privateLease":
+      return evaluatePrivateLease(inputs, scenario, data);
+    case "businessLease":
+      return evaluateBusinessLease(inputs, scenario, data);
+  }
+}
 
 export function compareAll(inputs: AppInputs): CompareResult {
   const data = getTaxData(inputs.taxYear);
-  const ownership = evaluateOwnership(inputs, data);
-  const privateLease = evaluatePrivateLease(inputs, data);
-  const businessLease = evaluateBusinessLease(inputs, data);
+  const scenarios = inputs.scenarios.map((s) => evaluateScenario(inputs, s, data));
 
   const warnings: string[] = [];
 
-  const ageInYears = new Date().getFullYear() - inputs.vehicle.detYear;
-  if (ageInYears >= data.bijtelling.youngtimerMinAgeYears) {
+  const youngtimerYears = data.bijtelling.youngtimerMinAgeYears;
+  const youngtimerRate = data.bijtelling.youngtimerRate;
+  const currentYear = new Date().getFullYear();
+  const youngtimerLabels = inputs.scenarios
+    .filter((s) => currentYear - s.vehicle.detYear >= youngtimerYears)
+    .map((s) => s.label);
+  if (youngtimerLabels.length > 0) {
     warnings.push(
-      `Vehicle qualifies as Youngtimer (${data.bijtelling.youngtimerRate * 100}% over dagwaarde, not list price).`,
+      `Youngtimer (${youngtimerRate * 100}% over dagwaarde, not list price): ${youngtimerLabels.join(", ")}.`,
     );
   }
-  if (inputs.vehicle.powertrain === "ev" && inputs.taxYear >= 2030) {
+
+  const hasEv = inputs.scenarios.some((s) => s.vehicle.powertrain === "ev");
+  if (hasEv && inputs.taxYear >= 2030) {
     warnings.push("From 2030 the EV MRB korting is 0% — full MRB applies.");
   }
 
-  return { ownership, privateLease, businessLease, warnings };
+  return { scenarios, warnings };
 }

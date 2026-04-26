@@ -9,7 +9,19 @@ import {
 } from "./incomeTax";
 import { evaluateBusinessLease } from "../scenarios/businessLease";
 import { getTaxData } from "../taxData";
-import { DEFAULTS } from "../../defaults";
+import { DEFAULTS, makeScenario } from "../../defaults";
+import type { AppInputs, Scenario } from "../types";
+
+function withBusinessLeaseScenario(
+  base: AppInputs,
+  vehicle: Partial<Scenario["vehicle"]>,
+  bl: Partial<Scenario["businessLease"]>,
+): { inputs: AppInputs; scenario: Scenario } {
+  const scenario = makeScenario("businessLease");
+  scenario.vehicle = { ...scenario.vehicle, ...vehicle };
+  scenario.businessLease = { ...scenario.businessLease, ...bl };
+  return { inputs: { ...base, scenarios: [scenario] }, scenario };
+}
 
 const data = getTaxData(2026);
 
@@ -311,17 +323,12 @@ describe("tax calculation — regression tests for explorer findings", () => {
 
   describe("business lease — eigen bijdrage extreme cases (regression for user-stated invariant)", () => {
     it("eigen bijdrage of €100,000/month does not produce negative bijtelling tax cost", () => {
-      const inputs = {
-        ...DEFAULTS,
-        vehicle: {
-          ...DEFAULTS.vehicle,
-          catalogusprijs: 30_000,
-          powertrain: "petrol" as const,
-          detYear: 2026,
-        },
-        businessLease: { ...DEFAULTS.businessLease, eigenBijdrage: 100_000 },
-      };
-      const r = evaluateBusinessLease(inputs, data);
+      const { inputs, scenario } = withBusinessLeaseScenario(
+        DEFAULTS,
+        { catalogusprijs: 30_000, powertrain: "petrol", detYear: 2026 },
+        { eigenBijdrage: 100_000 },
+      );
+      const r = evaluateBusinessLease(inputs, scenario, data);
       const bijLine = r.breakdown.find(
         (b) => b.label === "Bijtelling (net tax cost)",
       )!;
@@ -335,17 +342,12 @@ describe("tax calculation — regression tests for explorer findings", () => {
 
     it("eigen bijdrage exactly equal to gross bijtelling reduces taxable bijtelling to 0", () => {
       // Gross bijtelling: €30k × 22% = €6,600/year = €550/month.
-      const inputs = {
-        ...DEFAULTS,
-        vehicle: {
-          ...DEFAULTS.vehicle,
-          catalogusprijs: 30_000,
-          powertrain: "petrol" as const,
-          detYear: 2026,
-        },
-        businessLease: { ...DEFAULTS.businessLease, eigenBijdrage: 550 },
-      };
-      const r = evaluateBusinessLease(inputs, data);
+      const { inputs, scenario } = withBusinessLeaseScenario(
+        DEFAULTS,
+        { catalogusprijs: 30_000, powertrain: "petrol", detYear: 2026 },
+        { eigenBijdrage: 550 },
+      );
+      const r = evaluateBusinessLease(inputs, scenario, data);
       const bijLine = r.breakdown.find(
         (b) => b.label === "Bijtelling (net tax cost)",
       )!;
@@ -359,22 +361,18 @@ describe("tax calculation — regression tests for explorer findings", () => {
       // stays under that cliff, so the kortingen loss is less than half.
       // Therefore: halfBij/fullBij is slightly *greater* than 0.5.
       const halfMonthly = 550;
-      const fullCase = {
-        ...DEFAULTS,
-        vehicle: {
-          ...DEFAULTS.vehicle,
-          catalogusprijs: 60_000,
-          powertrain: "petrol" as const,
-          detYear: 2026,
-        },
-        businessLease: { ...DEFAULTS.businessLease, eigenBijdrage: 0 },
+      const { inputs: fullCase, scenario: fullScenario } = withBusinessLeaseScenario(
+        DEFAULTS,
+        { catalogusprijs: 60_000, powertrain: "petrol", detYear: 2026 },
+        { eigenBijdrage: 0 },
+      );
+      const halfScenario: Scenario = {
+        ...fullScenario,
+        businessLease: { ...fullScenario.businessLease, eigenBijdrage: halfMonthly },
       };
-      const halfCase = {
-        ...fullCase,
-        businessLease: { ...fullCase.businessLease, eigenBijdrage: halfMonthly },
-      };
-      const full = evaluateBusinessLease(fullCase, data);
-      const half = evaluateBusinessLease(halfCase, data);
+      const halfCase: AppInputs = { ...fullCase, scenarios: [halfScenario] };
+      const full = evaluateBusinessLease(fullCase, fullScenario, data);
+      const half = evaluateBusinessLease(halfCase, halfScenario, data);
       const fullBij = full.breakdown.find(
         (b) => b.label === "Bijtelling (net tax cost)",
       )!.monthly;

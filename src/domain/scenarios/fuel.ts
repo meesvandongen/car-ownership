@@ -1,16 +1,20 @@
-import type { OwnershipInputs, VehicleInputs } from "../types";
+import type { DrivingProfile, EnergyPrices, VehicleInputs } from "../types";
 
-export function annualFuelCost(vehicle: VehicleInputs, ownership: OwnershipInputs): number {
+export function annualFuelCost(
+  vehicle: VehicleInputs,
+  driving: DrivingProfile,
+  energy: EnergyPrices,
+): number {
   if (vehicle.powertrain === "ev" || vehicle.powertrain === "hydrogen") {
     return (
-      (vehicle.annualKm / 100) *
-      ownership.consumptionKwhPer100km *
-      ownership.electricityCostPerKwh
+      (driving.annualKm / 100) *
+      vehicle.consumptionKwhPer100km *
+      energy.electricityCostPerKwh
     );
   }
   return (
-    (vehicle.annualKm / 100) *
-    ownership.consumptionLper100km *
-    ownership.fuelCostPerLiter
+    (driving.annualKm / 100) *
+    vehicle.consumptionLper100km *
+    energy.fuelCostPerLiter
   );
 }

@@ -1,4 +1,4 @@
-import type { AppInputs, ScenarioResult } from "../types";
+import type { AppInputs, Scenario, ScenarioResult } from "../types";
 import type { TaxData } from "../taxData";
 import { calculateBijtelling } from "../tax/bijtelling";
 import { computeIncomeTax, marginalNetCost } from "../tax/incomeTax";
@@ -6,9 +6,11 @@ import { annualFuelCost } from "./fuel";
 
 export function evaluateBusinessLease(
   inputs: AppInputs,
+  scenario: Scenario,
   data: TaxData,
 ): ScenarioResult {
-  const { vehicle, businessLease, salary, ownership } = inputs;
+  const { drivingProfile, salary, energy } = inputs;
+  const { vehicle, businessLease } = scenario;
 
   // Annual gross bijtelling
   const grossBijtellingAnnual = calculateBijtelling(
@@ -17,7 +19,7 @@ export function evaluateBusinessLease(
       powertrain: vehicle.powertrain,
       detYear: vehicle.detYear,
       taxYear: inputs.taxYear,
-      privateKmPerYear: vehicle.privateKm,
+      privateKmPerYear: drivingProfile.privateKm,
       rittenregistratie: businessLease.rittenregistratie,
     },
     data,
@@ -52,8 +54,10 @@ export function evaluateBusinessLease(
   let fuelAnnual = 0;
   if (!businessLease.fuelCardPrivate) {
     const privateFraction =
-      vehicle.annualKm > 0 ? vehicle.privateKm / vehicle.annualKm : 0;
-    fuelAnnual = annualFuelCost(vehicle, ownership) * privateFraction;
+      drivingProfile.annualKm > 0
+        ? drivingProfile.privateKm / drivingProfile.annualKm
+        : 0;
+    fuelAnnual = annualFuelCost(vehicle, drivingProfile, energy) * privateFraction;
   }
 
   const monthlyBijtellingNet = annualBijtellingNetCost / 12;
@@ -90,18 +94,23 @@ export function evaluateBusinessLease(
       )}% pseudo-eindheffing on non-EV company cars (cannot be passed to employee).`,
     );
   }
-  if (businessLease.rittenregistratie && vehicle.privateKm < 500) {
+  if (businessLease.rittenregistratie && drivingProfile.privateKm < 500) {
     warnings.push(
       "Zero bijtelling claimed: requires a watertight rittenregistratie maintained year-round.",
     );
   }
 
   return {
-    name: "businessLease",
+    id: scenario.id,
+    label: scenario.label,
+    kind: "businessLease",
     grossMonthly,
     netMonthly,
     totalCost: netMonthly * inputs.comparisonMonths,
-    costPerKm: vehicle.annualKm > 0 ? (netMonthly * 12) / vehicle.annualKm : 0,
+    costPerKm:
+      drivingProfile.annualKm > 0
+        ? (netMonthly * 12) / drivingProfile.annualKm
+        : 0,
     breakdown: [
       { label: "Bijtelling (net tax cost)", monthly: monthlyBijtellingNet },
       { label: "Eigen bijdrage", monthly: monthlyEigenBijdrage },

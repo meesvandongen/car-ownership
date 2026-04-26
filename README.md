@@ -1,8 +1,9 @@
 # Dutch Car Cost Calculator
 
-A client-side web app that compares the total cost of three car-acquisition options
+A client-side web app that compares the total cost of car-acquisition options
 in the Netherlands — **private ownership**, **private lease**, and **business lease** —
-taking Dutch tax rules and bruto/netto salary into account.
+taking Dutch tax rules and bruto/netto salary into account. Add as many scenarios
+as you like, mixing different cars and acquisition types in a single unified comparison.
 
 Reference year: **2026**.
 
@@ -62,7 +63,9 @@ src/
 ## Sensitivity
 
 Pick one variable from the dropdown — annual mileage, catalogusprijs, salary, etc. —
-and the chart sweeps it across ±50% with all three scenarios overlaid. The dashed
+and the chart sweeps it across ±50% with every scenario overlaid. Shared variables
+move every line; per-scenario variables (catalogusprijs, lease tariff, etc.) take an
+extra picker so you can sweep a single scenario while the others stay put. The dashed
 line marks the current input.
 
 ## Sharing

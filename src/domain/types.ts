@@ -16,6 +16,8 @@ export type Province =
 
 export type Role = "employee" | "dga" | "zzp";
 
+export type ScenarioKind = "ownership" | "privateLease" | "businessLease";
+
 export interface VehicleInputs {
   catalogusprijs: number;
   aanschafprijs: number;
@@ -23,13 +25,9 @@ export interface VehicleInputs {
   co2: number;
   weightKg: number;
   detYear: number;
-  province: Province;
-  holdingMonths: number;
   residualValue: number;
-  annualKm: number;
-  businessKm: number;
-  commuteKm: number;
-  privateKm: number;
+  consumptionKwhPer100km: number;
+  consumptionLper100km: number;
 }
 
 export interface SalaryInputs {
@@ -45,10 +43,7 @@ export interface OwnershipInputs {
   loanTermMonths: number;
   insurancePerMonth: number;
   maintenancePerYear: number;
-  electricityCostPerKwh: number;
-  fuelCostPerLiter: number;
-  consumptionKwhPer100km: number;
-  consumptionLper100km: number;
+  holdingMonths: number;
 }
 
 export interface PrivateLeaseInputs {
@@ -76,13 +71,34 @@ export interface ReimbursementInputs {
   ratePerKm: number;
 }
 
-export interface AppInputs {
-  taxYear: number;
+export interface DrivingProfile {
+  province: Province;
+  annualKm: number;
+  businessKm: number;
+  commuteKm: number;
+  privateKm: number;
+}
+
+export interface EnergyPrices {
+  electricityCostPerKwh: number;
+  fuelCostPerLiter: number;
+}
+
+export interface Scenario {
+  id: string;
+  label: string;
+  kind: ScenarioKind;
   vehicle: VehicleInputs;
-  salary: SalaryInputs;
   ownership: OwnershipInputs;
   privateLease: PrivateLeaseInputs;
   businessLease: BusinessLeaseInputs;
+}
+
+export interface AppInputs {
+  taxYear: number;
+  drivingProfile: DrivingProfile;
+  salary: SalaryInputs;
+  energy: EnergyPrices;
   reimbursement: ReimbursementInputs;
   // Annual rate (e.g. 0.04 = 4%) used to charge an opportunity cost on capital
   // tied up in a down payment or in the vehicle's residual value. Set to 0
@@ -92,6 +108,7 @@ export interface AppInputs {
   // so that ownership (with a short holding period) is not unfairly compared
   // against a 5-year lease total.
   comparisonMonths: number;
+  scenarios: Scenario[];
 }
 
 export interface CostBreakdown {
@@ -100,7 +117,9 @@ export interface CostBreakdown {
 }
 
 export interface ScenarioResult {
-  name: "ownership" | "privateLease" | "businessLease";
+  id: string;
+  label: string;
+  kind: ScenarioKind;
   netMonthly: number;
   grossMonthly: number;
   /** Total net cost over `AppInputs.comparisonMonths`. */
@@ -111,8 +130,6 @@ export interface ScenarioResult {
 }
 
 export interface CompareResult {
-  ownership: ScenarioResult;
-  privateLease: ScenarioResult;
-  businessLease: ScenarioResult;
+  scenarios: ScenarioResult[];
   warnings: string[];
 }
