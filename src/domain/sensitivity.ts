@@ -1,92 +1,194 @@
 import type { AppInputs, CompareResult } from "./types";
 import { compareAll } from "./compare";
 
-export type SweepableNumeric =
+export type SharedSweepable =
   | "annualKm"
-  | "catalogusprijs"
-  | "aanschafprijs"
-  | "co2"
-  | "weightKg"
-  | "residualValue"
   | "bruto"
   | "electricityCostPerKwh"
   | "fuelCostPerLiter"
+  | "opportunityCostRate";
+
+export type CarSweepable =
+  | "catalogusprijs"
+  | "aanschafprijs"
+  | "co2"
+  | "weightKg";
+
+export type CalculationSweepable =
+  | "residualValue"
   | "monthlyLeaseTariff"
   | "monthlyPayment"
   | "eigenBijdrage"
-  | "salarySacrificeMonthly"
-  | "opportunityCostRate";
+  | "salarySacrificeMonthly";
+
+export type SweepableNumeric =
+  | SharedSweepable
+  | CarSweepable
+  | CalculationSweepable;
+
+export const SHARED_SWEEPABLES: SharedSweepable[] = [
+  "annualKm",
+  "bruto",
+  "electricityCostPerKwh",
+  "fuelCostPerLiter",
+  "opportunityCostRate",
+];
+
+export const CAR_SWEEPABLES: CarSweepable[] = [
+  "catalogusprijs",
+  "aanschafprijs",
+  "co2",
+  "weightKg",
+];
+
+export const CALCULATION_SWEEPABLES: CalculationSweepable[] = [
+  "residualValue",
+  "monthlyLeaseTariff",
+  "monthlyPayment",
+  "eigenBijdrage",
+  "salarySacrificeMonthly",
+];
+
+export type SweepScope =
+  | { kind: "shared" }
+  | { kind: "car"; carId: string }
+  | { kind: "calculation"; calculationId: string };
+
+export function variableScope(
+  v: SweepableNumeric,
+): "shared" | "car" | "calculation" {
+  if ((SHARED_SWEEPABLES as readonly string[]).includes(v)) return "shared";
+  if ((CAR_SWEEPABLES as readonly string[]).includes(v)) return "car";
+  return "calculation";
+}
 
 export interface SweepPoint {
   x: number;
   result: CompareResult;
 }
 
-const VARIABLE_PATHS: Record<SweepableNumeric, (i: AppInputs, v: number) => AppInputs> = {
-  annualKm: (i, v) => ({ ...i, vehicle: { ...i.vehicle, annualKm: v } }),
-  catalogusprijs: (i, v) => ({ ...i, vehicle: { ...i.vehicle, catalogusprijs: v } }),
-  aanschafprijs: (i, v) => ({ ...i, vehicle: { ...i.vehicle, aanschafprijs: v } }),
-  co2: (i, v) => ({ ...i, vehicle: { ...i.vehicle, co2: v } }),
-  weightKg: (i, v) => ({ ...i, vehicle: { ...i.vehicle, weightKg: v } }),
-  residualValue: (i, v) => ({ ...i, vehicle: { ...i.vehicle, residualValue: v } }),
-  bruto: (i, v) => ({ ...i, salary: { ...i.salary, bruto: v } }),
-  electricityCostPerKwh: (i, v) => ({
-    ...i,
-    ownership: { ...i.ownership, electricityCostPerKwh: v },
-  }),
-  fuelCostPerLiter: (i, v) => ({
-    ...i,
-    ownership: { ...i.ownership, fuelCostPerLiter: v },
-  }),
-  monthlyLeaseTariff: (i, v) => ({
-    ...i,
-    businessLease: { ...i.businessLease, monthlyLeaseTariff: v },
-  }),
-  monthlyPayment: (i, v) => ({
-    ...i,
-    privateLease: { ...i.privateLease, monthlyPayment: v },
-  }),
-  eigenBijdrage: (i, v) => ({
-    ...i,
-    businessLease: { ...i.businessLease, eigenBijdrage: v },
-  }),
-  salarySacrificeMonthly: (i, v) => ({
-    ...i,
-    businessLease: { ...i.businessLease, salarySacrificeMonthly: v },
-  }),
-  opportunityCostRate: (i, v) => ({ ...i, opportunityCostRate: v }),
-};
-
-export function getCurrentValue(inputs: AppInputs, variable: SweepableNumeric): number {
+function withSharedVariable(
+  inputs: AppInputs,
+  variable: SharedSweepable,
+  value: number,
+): AppInputs {
   switch (variable) {
     case "annualKm":
-      return inputs.vehicle.annualKm;
-    case "catalogusprijs":
-      return inputs.vehicle.catalogusprijs;
-    case "aanschafprijs":
-      return inputs.vehicle.aanschafprijs;
-    case "co2":
-      return inputs.vehicle.co2;
-    case "weightKg":
-      return inputs.vehicle.weightKg;
-    case "residualValue":
-      return inputs.vehicle.residualValue;
+      return {
+        ...inputs,
+        drivingProfile: { ...inputs.drivingProfile, annualKm: value },
+      };
     case "bruto":
-      return inputs.salary.bruto;
+      return { ...inputs, salary: { ...inputs.salary, bruto: value } };
     case "electricityCostPerKwh":
-      return inputs.ownership.electricityCostPerKwh;
+      return {
+        ...inputs,
+        energy: { ...inputs.energy, electricityCostPerKwh: value },
+      };
     case "fuelCostPerLiter":
-      return inputs.ownership.fuelCostPerLiter;
-    case "monthlyLeaseTariff":
-      return inputs.businessLease.monthlyLeaseTariff;
-    case "monthlyPayment":
-      return inputs.privateLease.monthlyPayment;
-    case "eigenBijdrage":
-      return inputs.businessLease.eigenBijdrage;
-    case "salarySacrificeMonthly":
-      return inputs.businessLease.salarySacrificeMonthly;
+      return { ...inputs, energy: { ...inputs.energy, fuelCostPerLiter: value } };
     case "opportunityCostRate":
-      return inputs.opportunityCostRate;
+      return { ...inputs, opportunityCostRate: value };
+  }
+}
+
+function withCarVariable(
+  inputs: AppInputs,
+  carId: string,
+  variable: CarSweepable,
+  value: number,
+): AppInputs {
+  return {
+    ...inputs,
+    cars: inputs.cars.map((c) =>
+      c.id === carId ? { ...c, vehicle: { ...c.vehicle, [variable]: value } } : c,
+    ),
+  };
+}
+
+function withCalcVariable(
+  inputs: AppInputs,
+  calcId: string,
+  variable: CalculationSweepable,
+  value: number,
+): AppInputs {
+  return {
+    ...inputs,
+    calculations: inputs.calculations.map((c) => {
+      if (c.id !== calcId) return c;
+      switch (variable) {
+        case "residualValue":
+          return { ...c, ownership: { ...c.ownership, residualValue: value } };
+        case "monthlyLeaseTariff":
+          return {
+            ...c,
+            businessLease: { ...c.businessLease, monthlyLeaseTariff: value },
+          };
+        case "monthlyPayment":
+          return {
+            ...c,
+            privateLease: { ...c.privateLease, monthlyPayment: value },
+          };
+        case "eigenBijdrage":
+          return {
+            ...c,
+            businessLease: { ...c.businessLease, eigenBijdrage: value },
+          };
+        case "salarySacrificeMonthly":
+          return {
+            ...c,
+            businessLease: {
+              ...c.businessLease,
+              salarySacrificeMonthly: value,
+            },
+          };
+      }
+    }),
+  };
+}
+
+export function getCurrentValue(
+  inputs: AppInputs,
+  variable: SweepableNumeric,
+  scope?: SweepScope,
+): number {
+  const s = variableScope(variable);
+  if (s === "shared") {
+    switch (variable as SharedSweepable) {
+      case "annualKm":
+        return inputs.drivingProfile.annualKm;
+      case "bruto":
+        return inputs.salary.bruto;
+      case "electricityCostPerKwh":
+        return inputs.energy.electricityCostPerKwh;
+      case "fuelCostPerLiter":
+        return inputs.energy.fuelCostPerLiter;
+      case "opportunityCostRate":
+        return inputs.opportunityCostRate;
+    }
+  }
+  if (s === "car") {
+    const carId = scope?.kind === "car" ? scope.carId : inputs.cars[0]?.id;
+    const car = inputs.cars.find((c) => c.id === carId) ?? inputs.cars[0];
+    if (!car) return 0;
+    return car.vehicle[variable as CarSweepable];
+  }
+  // calculation-scoped
+  const calcId =
+    scope?.kind === "calculation" ? scope.calculationId : inputs.calculations[0]?.id;
+  const calc = inputs.calculations.find((c) => c.id === calcId) ?? inputs.calculations[0];
+  if (!calc) return 0;
+  switch (variable as CalculationSweepable) {
+    case "residualValue":
+      return calc.ownership.residualValue;
+    case "monthlyLeaseTariff":
+      return calc.businessLease.monthlyLeaseTariff;
+    case "monthlyPayment":
+      return calc.privateLease.monthlyPayment;
+    case "eigenBijdrage":
+      return calc.businessLease.eigenBijdrage;
+    case "salarySacrificeMonthly":
+      return calc.businessLease.salarySacrificeMonthly;
   }
 }
 
@@ -94,8 +196,9 @@ export function suggestRange(
   inputs: AppInputs,
   variable: SweepableNumeric,
   steps = 21,
+  scope?: SweepScope,
 ): number[] {
-  const current = getCurrentValue(inputs, variable);
+  const current = getCurrentValue(inputs, variable, scope);
   const min = Math.max(0, current * 0.5);
   const max = current * 1.5 || 100;
   const step = (max - min) / (steps - 1);
@@ -106,7 +209,32 @@ export function sweep(
   inputs: AppInputs,
   variable: SweepableNumeric,
   range: number[],
+  scope?: SweepScope,
 ): SweepPoint[] {
-  const apply = VARIABLE_PATHS[variable];
-  return range.map((value) => ({ x: value, result: compareAll(apply(inputs, value)) }));
+  const s = variableScope(variable);
+  if (s === "shared") {
+    return range.map((value) => ({
+      x: value,
+      result: compareAll(withSharedVariable(inputs, variable as SharedSweepable, value)),
+    }));
+  }
+  if (s === "car") {
+    const carId = scope?.kind === "car" ? scope.carId : inputs.cars[0]?.id;
+    if (!carId) return [];
+    return range.map((value) => ({
+      x: value,
+      result: compareAll(
+        withCarVariable(inputs, carId, variable as CarSweepable, value),
+      ),
+    }));
+  }
+  const calcId =
+    scope?.kind === "calculation" ? scope.calculationId : inputs.calculations[0]?.id;
+  if (!calcId) return [];
+  return range.map((value) => ({
+    x: value,
+    result: compareAll(
+      withCalcVariable(inputs, calcId, variable as CalculationSweepable, value),
+    ),
+  }));
 }

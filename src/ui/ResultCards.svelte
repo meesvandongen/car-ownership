@@ -1,52 +1,74 @@
 <script lang="ts">
-  import type { CompareResult, ScenarioResult } from "../domain/types";
+  import type { CompareResult, ScenarioKind, ScenarioResult } from "../domain/types";
   import { formatEuro, formatEuroPrecise } from "../lib/format";
 
   let { result }: { result: CompareResult } = $props();
 
-  const SCENARIOS: { key: keyof CompareResult; title: string }[] = [
-    { key: "ownership", title: "Private ownership" },
-    { key: "privateLease", title: "Private lease" },
-    { key: "businessLease", title: "Business lease" },
-  ];
+  const KIND_LABELS: Record<ScenarioKind, string> = {
+    ownership: "Ownership",
+    privateLease: "Private lease",
+    businessLease: "Business lease",
+  };
 
-  function cheapestKey(r: CompareResult): keyof CompareResult {
-    const arr: [keyof CompareResult, number][] = [
-      ["ownership", r.ownership.netMonthly],
-      ["privateLease", r.privateLease.netMonthly],
-      ["businessLease", r.businessLease.netMonthly],
-    ];
-    arr.sort((a, b) => a[1] - b[1]);
-    return arr[0][0];
-  }
+  // Group results by car, preserving the order each car first appears.
+  const groups = $derived.by(() => {
+    const order: string[] = [];
+    const map = new Map<string, { carId: string; carLabel: string; items: ScenarioResult[] }>();
+    for (const r of result.results) {
+      if (!map.has(r.carId)) {
+        order.push(r.carId);
+        map.set(r.carId, { carId: r.carId, carLabel: r.carLabel, items: [] });
+      }
+      map.get(r.carId)!.items.push(r);
+    }
+    return order.map((id) => map.get(id)!);
+  });
+
+  const cheapestId = $derived.by(() => {
+    if (result.results.length === 0) return undefined;
+    return result.results.reduce((best, s) =>
+      s.netMonthly < best.netMonthly ? s : best,
+    ).id;
+  });
+
+  const showCarHeading = $derived(groups.length > 1);
 </script>
 
-<div class="cards">
-  {#each SCENARIOS as { key, title }}
-    {@const scenario = result[key] as ScenarioResult}
-    <div class="card" class:best={cheapestKey(result) === key}>
-      <h3>{title}</h3>
-      <div class="net">{formatEuro(scenario.netMonthly)}<span>/month net</span></div>
-      <div class="muted">
-        Gross {formatEuro(scenario.grossMonthly)} · {formatEuroPrecise(scenario.costPerKm)}/km
-      </div>
-      <table>
-        <tbody>
-          {#each scenario.breakdown as item}
-            <tr>
-              <td>{item.label}</td>
-              <td class="num">{formatEuro(item.monthly)}</td>
-            </tr>
-          {/each}
-        </tbody>
-      </table>
-      {#if scenario.warnings.length > 0}
-        <ul class="warnings">
-          {#each scenario.warnings as w}
-            <li>{w}</li>
-          {/each}
-        </ul>
-      {/if}
+<div class="results">
+  {#each groups as group (group.carId)}
+    {#if showCarHeading}
+      <h2 class="car-heading">{group.carLabel}</h2>
+    {/if}
+    <div class="cards">
+      {#each group.items as scenario (scenario.id)}
+        <div class="card" class:best={cheapestId === scenario.id}>
+          <div class="card-head">
+            <h3>{scenario.label}</h3>
+            <span class="kind-tag tag-{scenario.kind}">{KIND_LABELS[scenario.kind]}</span>
+          </div>
+          <div class="net">{formatEuro(scenario.netMonthly)}<span>/month net</span></div>
+          <div class="muted">
+            Gross {formatEuro(scenario.grossMonthly)} · {formatEuroPrecise(scenario.costPerKm)}/km
+          </div>
+          <table>
+            <tbody>
+              {#each scenario.breakdown as item}
+                <tr>
+                  <td>{item.label}</td>
+                  <td class="num">{formatEuro(item.monthly)}</td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+          {#if scenario.warnings.length > 0}
+            <ul class="warnings">
+              {#each scenario.warnings as w}
+                <li>{w}</li>
+              {/each}
+            </ul>
+          {/if}
+        </div>
+      {/each}
     </div>
   {/each}
 </div>
@@ -63,6 +85,20 @@
 {/if}
 
 <style>
+  .results {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .car-heading {
+    margin: 0;
+    font-size: 13px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 4px;
+  }
   .cards {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -79,6 +115,40 @@
   }
   .card.best {
     border-color: var(--good);
+  }
+  .card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .card-head h3 {
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .kind-tag {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .tag-ownership {
+    border-color: #58a6ff;
+    color: #58a6ff;
+  }
+  .tag-privateLease {
+    border-color: #3fb950;
+    color: #3fb950;
+  }
+  .tag-businessLease {
+    border-color: #d29922;
+    color: #d29922;
   }
   .net {
     font-size: 28px;

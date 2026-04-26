@@ -16,6 +16,12 @@ export type Province =
 
 export type Role = "employee" | "dga" | "zzp";
 
+export type ScenarioKind = "ownership" | "privateLease" | "businessLease";
+
+/**
+ * The intrinsic spec of a vehicle. Properties of the car itself, independent
+ * of how it's acquired. A single Car can back multiple Calculations.
+ */
 export interface VehicleInputs {
   catalogusprijs: number;
   aanschafprijs: number;
@@ -23,13 +29,14 @@ export interface VehicleInputs {
   co2: number;
   weightKg: number;
   detYear: number;
-  province: Province;
-  holdingMonths: number;
-  residualValue: number;
-  annualKm: number;
-  businessKm: number;
-  commuteKm: number;
-  privateKm: number;
+  consumptionKwhPer100km: number;
+  consumptionLper100km: number;
+}
+
+export interface Car {
+  id: string;
+  label: string;
+  vehicle: VehicleInputs;
 }
 
 export interface SalaryInputs {
@@ -39,16 +46,20 @@ export interface SalaryInputs {
   hypotheekrenteAftrek: number;
 }
 
+/**
+ * Inputs specific to an ownership calculation. `holdingMonths` and
+ * `residualValue` live here (not on the Car) because they belong to the
+ * decision of buying-and-holding for a particular period — the same car can
+ * be evaluated against multiple holding periods with different residuals.
+ */
 export interface OwnershipInputs {
   downPayment: number;
   interestRate: number;
   loanTermMonths: number;
   insurancePerMonth: number;
   maintenancePerYear: number;
-  electricityCostPerKwh: number;
-  fuelCostPerLiter: number;
-  consumptionKwhPer100km: number;
-  consumptionLper100km: number;
+  holdingMonths: number;
+  residualValue: number;
 }
 
 export interface PrivateLeaseInputs {
@@ -76,13 +87,39 @@ export interface ReimbursementInputs {
   ratePerKm: number;
 }
 
-export interface AppInputs {
-  taxYear: number;
-  vehicle: VehicleInputs;
-  salary: SalaryInputs;
+export interface DrivingProfile {
+  province: Province;
+  annualKm: number;
+  businessKm: number;
+  commuteKm: number;
+  privateKm: number;
+}
+
+export interface EnergyPrices {
+  electricityCostPerKwh: number;
+  fuelCostPerLiter: number;
+}
+
+/**
+ * A single contract / acquisition scenario for a specific Car. Multiple
+ * Calculations can share one Car (e.g. ownership-vs-business-lease for the
+ * same vehicle), avoiding duplicated vehicle inputs.
+ */
+export interface Calculation {
+  id: string;
+  carId: string;
+  label: string;
+  kind: ScenarioKind;
   ownership: OwnershipInputs;
   privateLease: PrivateLeaseInputs;
   businessLease: BusinessLeaseInputs;
+}
+
+export interface AppInputs {
+  taxYear: number;
+  drivingProfile: DrivingProfile;
+  salary: SalaryInputs;
+  energy: EnergyPrices;
   reimbursement: ReimbursementInputs;
   // Annual rate (e.g. 0.04 = 4%) used to charge an opportunity cost on capital
   // tied up in a down payment or in the vehicle's residual value. Set to 0
@@ -92,6 +129,8 @@ export interface AppInputs {
   // so that ownership (with a short holding period) is not unfairly compared
   // against a 5-year lease total.
   comparisonMonths: number;
+  cars: Car[];
+  calculations: Calculation[];
 }
 
 export interface CostBreakdown {
@@ -100,7 +139,11 @@ export interface CostBreakdown {
 }
 
 export interface ScenarioResult {
-  name: "ownership" | "privateLease" | "businessLease";
+  id: string;
+  label: string;
+  carId: string;
+  carLabel: string;
+  kind: ScenarioKind;
   netMonthly: number;
   grossMonthly: number;
   /** Total net cost over `AppInputs.comparisonMonths`. */
@@ -111,8 +154,6 @@ export interface ScenarioResult {
 }
 
 export interface CompareResult {
-  ownership: ScenarioResult;
-  privateLease: ScenarioResult;
-  businessLease: ScenarioResult;
+  results: ScenarioResult[];
   warnings: string[];
 }

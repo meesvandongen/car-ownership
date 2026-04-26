@@ -1,4 +1,4 @@
-import type { AppInputs, ScenarioResult } from "../types";
+import type { AppInputs, Calculation, Car, ScenarioResult } from "../types";
 import type { TaxData } from "../taxData";
 import { calculateAnnualMrb } from "../tax/mrb";
 import { calculateBpm } from "../tax/bpm";
@@ -8,13 +8,17 @@ import { annuityPayment } from "./financing";
 
 export function evaluateOwnership(
   inputs: AppInputs,
+  car: Car,
+  calc: Calculation,
   data: TaxData,
 ): ScenarioResult {
-  const { vehicle, ownership, salary, reimbursement } = inputs;
+  const { drivingProfile, salary, reimbursement, energy } = inputs;
+  const { vehicle } = car;
+  const { ownership } = calc;
 
   // Depreciation (straight line) over holding period.
   const depreciation =
-    (vehicle.aanschafprijs - vehicle.residualValue) / vehicle.holdingMonths;
+    (vehicle.aanschafprijs - ownership.residualValue) / ownership.holdingMonths;
 
   // Financing
   const loanPrincipal = Math.max(0, vehicle.aanschafprijs - ownership.downPayment);
@@ -25,15 +29,15 @@ export function evaluateOwnership(
   );
   // Spread loan payments across holding period (if loan term ≠ holding, average over holding)
   const monthlyFinance =
-    (monthlyLoan * Math.min(ownership.loanTermMonths, vehicle.holdingMonths)) /
-    vehicle.holdingMonths;
+    (monthlyLoan * Math.min(ownership.loanTermMonths, ownership.holdingMonths)) /
+    ownership.holdingMonths;
 
   // Annual MRB
   const annualMrb = calculateAnnualMrb(
     {
       weightKg: vehicle.weightKg,
       powertrain: vehicle.powertrain,
-      province: vehicle.province,
+      province: drivingProfile.province,
       taxYear: inputs.taxYear,
     },
     data,
@@ -53,24 +57,24 @@ export function evaluateOwnership(
   // assumed paid off). Average tied-up own capital ≈ (downPayment + residualValue)/2.
   // This captures the foregone return on cash that's locked into a depreciating asset.
   const cappedDownPayment = Math.min(ownership.downPayment, vehicle.aanschafprijs);
-  const averageOwnCapital = (cappedDownPayment + vehicle.residualValue) / 2;
+  const averageOwnCapital = (cappedDownPayment + ownership.residualValue) / 2;
   const monthlyOpportunityCost =
     (averageOwnCapital * inputs.opportunityCostRate) / 12;
 
   // Fuel / electricity
-  const fuelAnnual = annualFuelCost(vehicle, ownership);
+  const fuelAnnual = annualFuelCost(vehicle, drivingProfile, energy);
 
   // Reimbursement (untaxed, up to cap × business km)
   const reimbursementAnnual =
     Math.min(reimbursement.ratePerKm, data.reimbursement.taxFreePerKm) *
-    vehicle.businessKm;
+    drivingProfile.businessKm;
 
   // Above the tax-free cap is loon-taxed; we approximate with marginal rate.
   const taxableExcessRate = Math.max(
     0,
     reimbursement.ratePerKm - data.reimbursement.taxFreePerKm,
   );
-  const taxableExcessAnnual = taxableExcessRate * vehicle.businessKm;
+  const taxableExcessAnnual = taxableExcessRate * drivingProfile.businessKm;
   const baseTax = computeIncomeTax(salary.bruto, data);
   const withExcess = computeIncomeTax(salary.bruto + taxableExcessAnnual, data);
   const excessNetGain = withExcess.netIncome - baseTax.netIncome;
@@ -94,11 +98,18 @@ export function evaluateOwnership(
   const netMonthly = grossMonthly - monthlyReimbursement;
 
   return {
-    name: "ownership",
+    id: calc.id,
+    label: calc.label,
+    carId: car.id,
+    carLabel: car.label,
+    kind: "ownership",
     grossMonthly,
     netMonthly,
     totalCost: netMonthly * inputs.comparisonMonths,
-    costPerKm: vehicle.annualKm > 0 ? (netMonthly * 12) / vehicle.annualKm : 0,
+    costPerKm:
+      drivingProfile.annualKm > 0
+        ? (netMonthly * 12) / drivingProfile.annualKm
+        : 0,
     breakdown: [
       { label: "Depreciation", monthly: monthlyDepreciation },
       { label: "Financing", monthly: monthlyFinance },
