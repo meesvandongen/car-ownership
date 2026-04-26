@@ -1,0 +1,648 @@
+{
+  "summary": {
+    "totalFindings": 44,
+    "errors": 0,
+    "warnings": 0,
+    "infos": 44,
+    "byCategory": {
+      "bijtelling": 30,
+      "bpm": 4,
+      "bpm.crossover": 1,
+      "mrb": 6,
+      "incomeTax": 3
+    }
+  },
+  "findings": [
+    {
+      "category": "bijtelling",
+      "severity": "info",
+      "description": "EV cap region (boundary point) for detYear 2025. Slope = 0.1700",
+      "inputs": {
+        "powertrain": "ev",
+        "detYear": 2025,
+        "taxYear": 2025,
+        "catalogusprijs": 29500
+      },
+      "observed": {
+        "bijtelling": 5015,
+        "slope": 0.17
+      }
+    },
+    {
+      "category": "bijtelling",
+      "severity": "info",
+      "description": "EV cap region (boundary point) for detYear 2025. Slope = 0.1700",
+      "inputs": {
+        "powertrain": "ev",
+        "detYear": 2025,
+        "taxYear": 2025,
+        "catalogusprijs": 29750
+      },
+      "observed": {
+        "bijtelling": 5057.5,
+        "slope": 0.17
+      }
+    },
+    {
+      "category": "bijtelling",
+      "severity": "info",
+      "description": "EV cap region (boundary point) for detYear 2025. Slope = 0.1700",
+      "inputs": {
+        "powertrain": "ev",
+        "detYear": 2025,
+        "taxYear": 2025,
+        "catalogusprijs": 30000
+      },
+      "observed": {
+        "bijtelling": 5100,
+        "slope": 0.17
+      }
+    },
+    {
+      "category": "bijtelling",
+      "severity": "info",
+      "description": "EV cap region (boundary point) for detYear 2025. Slope = 0.2200",
+      "inputs": {
+        "powertrain": "ev",
+        "detYear": 2025,
+        "taxYear": 2025,
+        "catalogusprijs": 30250
+      },
+      "observed": {
+        "bijtelling": 5155,
+        "slope": 0.22
+      }
+    },
+    {
+      "category": "bijtelling",
+      "severity": "info",
+      "description": "EV cap region (boundary point) for detYear 2025. Slope = 0.2200",
+      "inputs": {
+        "powertrain": "ev",
+        "detYear": 2025,
+        "taxYear": 2025,
+        "catalogusprijs": 30500
+      },
+      "observed": {
+        "bijtelling": 5210,
+        "slope": 0.22
+      }
+    },
+    {
+      "category": "bijtelling",
+      "severity": "info",
+      "description": "EV cap region (boundary point) for detYear 2025. Slope = 0.1700",
+      "inputs": {
+        "powertrain": "ev",
+        "detYear": 2025,
+        "taxYear": 2027,
+        "catalogusprijs": 29500
+      },
+      "observed": {
+        "bijtelling": 5015,
+        "slope": 0.17
+      }
+    },
+    {
+      "category": "bijtelling",
+      "severity": "info",
+      "description": "EV cap region (boundary point) for detYear 2025. Slope = 0.1700",
+      "inputs": {
+        "powertrain": "ev",
+        "detYear": 2025,
+        "taxYear": 2027,
+        "catalogusprijs": 29750
+      },
+      "observed": {
+        "bijtelling": 5057.5,
+        "slope": 0.17
+      }
+    },
+    {
+      "category": "bijtelling",
+      "severity": "info",
+      "description": "EV cap region (boundary point) for detYear 2025. Slope = 0.1700",
+      "inputs": {
+        "powertrain": "ev",
+        "detYear": 2025,
+        "taxYear": 2027,
+        "catalogusprijs": 30000
+      },
+      "observed": {
+        "bijtelling": 5100,
+        "slope": 0.17
+      }
+    },
+    {
+      "category": "bijtelling",
+      "severity": "info",
+      "description": "EV cap region (boundary point) for detYear 2025. Slope = 0.2200",
+      "inputs": {
+        "powertrain": "ev",
+        "detYear": 2025,
+        "taxYear": 2027,
+        "catalogusprijs": 30250
+      },
+      "observed": {
+        "bijtelling": 5155,
+        "slope": 0.22
+      }
+    },
+    {
+      "category": "bijtelling",
+      "severity": "info",
+      "description": "EV cap region (boundary point) for detYear 2025. Slope = 0.2200",
+      "inputs": {
+        "powertrain": "ev",
+        "detYear": 2025,
+        "taxYear": 2027,
+        "catalogusprijs": 30500
+      },
+      "observed": {
+        "bijtelling": 5210,
+        "slope": 0.22
+      }
+    },
+    {
+      "category": "bijtelling",
+      "severity": "info",
+      "description": "EV cap region (boundary point) for detYear 2026. Slope = 0.1800",
+      "inputs": {
+        "powertrain": "ev",
+        "detYear": 2026,
+        "taxYear": 2026,
+        "catalogusprijs": 29500
+      },
+      "observed": {
+        "bijtelling": 5310,
+        "slope": 0.18
+      }
+    },
+    {
+      "category": "bijtelling",
+      "severity": "info",
+      "description": "EV cap region (boundary point) for detYear 2026. Slope = 0.1800",
+      "inputs": {
+        "powertrain": "ev",
+        "detYear": 2026,
+        "taxYear": 2026,
+        "catalogusprijs": 29750
+      },
+      "observed": {
+        "bijtelling": 5355,
+        "slope": 0.18
+      }
+    },
+    {
+      "category": "bijtelling",
+      "severity": "info",
+      "description": "EV cap region (boundary point) for detYear 2026. Slope = 0.1800",
+      "inputs": {
+        "powertrain": "ev",
+        "detYear": 2026,
+        "taxYear": 2026,
+        "catalogusprijs": 30000
+      },
+      "observed": {
+        "bijtelling": 5400,
+        "slope": 0.18
+      }
+    },
+    {
+      "category": "bijtelling",
+      "severity": "info",
+      "description": "EV cap region (boundary point) for detYear 2026. Slope = 0.2200",
+      "inputs": {
+        "powertrain": "ev",
+        "detYear": 2026,
+        "taxYear": 2026,
+        "catalogusprijs": 30250
+      },
+      "observed": {
+        "bijtelling": 5455,
+        "slope": 0.22
+      }
+    },
+    {
+      "category": "bijtelling",
+      "severity": "info",
+      "description": "EV cap region (boundary point) for detYear 2026. Slope = 0.2200",
+      "inputs": {
+        "powertrain": "ev",
+        "detYear": 2026,
+        "taxYear": 2026,
+        "catalogusprijs": 30500
+      },
+      "observed": {
+        "bijtelling": 5510,
+        "slope": 0.22
+      }
+    },
+    {
+      "category": "bijtelling",
+      "severity": "info",
+      "description": "EV cap region (boundary point) for detYear 2026. Slope = 0.1800",
+      "inputs": {
+        "powertrain": "ev",
+        "detYear": 2026,
+        "taxYear": 2028,
+        "catalogusprijs": 29500
+      },
+      "observed": {
+        "bijtelling": 5310,
+        "slope": 0.18
+      }
+    },
+    {
+      "category": "bijtelling",
+      "severity": "info",
+      "description": "EV cap region (boundary point) for detYear 2026. Slope = 0.1800",
+      "inputs": {
+        "powertrain": "ev",
+        "detYear": 2026,
+        "taxYear": 2028,
+        "catalogusprijs": 29750
+      },
+      "observed": {
+        "bijtelling": 5355,
+        "slope": 0.18
+      }
+    },
+    {
+      "category": "bijtelling",
+      "severity": "info",
+      "description": "EV cap region (boundary point) for detYear 2026. Slope = 0.1800",
+      "inputs": {
+        "powertrain": "ev",
+        "detYear": 2026,
+        "taxYear": 2028,
+        "catalogusprijs": 30000
+      },
+      "observed": {
+        "bijtelling": 5400,
+        "slope": 0.18
+      }
+    },
+    {
+      "category": "bijtelling",
+      "severity": "info",
+      "description": "EV cap region (boundary point) for detYear 2026. Slope = 0.2200",
+      "inputs": {
+        "powertrain": "ev",
+        "detYear": 2026,
+        "taxYear": 2028,
+        "catalogusprijs": 30250
+      },
+      "observed": {
+        "bijtelling": 5455,
+        "slope": 0.22
+      }
+    },
+    {
+      "category": "bijtelling",
+      "severity": "info",
+      "description": "EV cap region (boundary point) for detYear 2026. Slope = 0.2200",
+      "inputs": {
+        "powertrain": "ev",
+        "detYear": 2026,
+        "taxYear": 2028,
+        "catalogusprijs": 30500
+      },
+      "observed": {
+        "bijtelling": 5510,
+        "slope": 0.22
+      }
+    },
+    {
+      "category": "bijtelling",
+      "severity": "info",
+      "description": "EV cap region (boundary point) for detYear 2027. Slope = 0.2000",
+      "inputs": {
+        "powertrain": "ev",
+        "detYear": 2027,
+        "taxYear": 2027,
+        "catalogusprijs": 29500
+      },
+      "observed": {
+        "bijtelling": 5900,
+        "slope": 0.2
+      }
+    },
+    {
+      "category": "bijtelling",
+      "severity": "info",
+      "description": "EV cap region (boundary point) for detYear 2027. Slope = 0.2000",
+      "inputs": {
+        "powertrain": "ev",
+        "detYear": 2027,
+        "taxYear": 2027,
+        "catalogusprijs": 29750
+      },
+      "observed": {
+        "bijtelling": 5950,
+        "slope": 0.2
+      }
+    },
+    {
+      "category": "bijtelling",
+      "severity": "info",
+      "description": "EV cap region (boundary point) for detYear 2027. Slope = 0.2000",
+      "inputs": {
+        "powertrain": "ev",
+        "detYear": 2027,
+        "taxYear": 2027,
+        "catalogusprijs": 30000
+      },
+      "observed": {
+        "bijtelling": 6000,
+        "slope": 0.2
+      }
+    },
+    {
+      "category": "bijtelling",
+      "severity": "info",
+      "description": "EV cap region (boundary point) for detYear 2027. Slope = 0.2200",
+      "inputs": {
+        "powertrain": "ev",
+        "detYear": 2027,
+        "taxYear": 2027,
+        "catalogusprijs": 30250
+      },
+      "observed": {
+        "bijtelling": 6055,
+        "slope": 0.22
+      }
+    },
+    {
+      "category": "bijtelling",
+      "severity": "info",
+      "description": "EV cap region (boundary point) for detYear 2027. Slope = 0.2200",
+      "inputs": {
+        "powertrain": "ev",
+        "detYear": 2027,
+        "taxYear": 2027,
+        "catalogusprijs": 30500
+      },
+      "observed": {
+        "bijtelling": 6110,
+        "slope": 0.22
+      }
+    },
+    {
+      "category": "bijtelling",
+      "severity": "info",
+      "description": "EV cap region (boundary point) for detYear 2027. Slope = 0.2000",
+      "inputs": {
+        "powertrain": "ev",
+        "detYear": 2027,
+        "taxYear": 2029,
+        "catalogusprijs": 29500
+      },
+      "observed": {
+        "bijtelling": 5900,
+        "slope": 0.2
+      }
+    },
+    {
+      "category": "bijtelling",
+      "severity": "info",
+      "description": "EV cap region (boundary point) for detYear 2027. Slope = 0.2000",
+      "inputs": {
+        "powertrain": "ev",
+        "detYear": 2027,
+        "taxYear": 2029,
+        "catalogusprijs": 29750
+      },
+      "observed": {
+        "bijtelling": 5950,
+        "slope": 0.2
+      }
+    },
+    {
+      "category": "bijtelling",
+      "severity": "info",
+      "description": "EV cap region (boundary point) for detYear 2027. Slope = 0.2000",
+      "inputs": {
+        "powertrain": "ev",
+        "detYear": 2027,
+        "taxYear": 2029,
+        "catalogusprijs": 30000
+      },
+      "observed": {
+        "bijtelling": 6000,
+        "slope": 0.2
+      }
+    },
+    {
+      "category": "bijtelling",
+      "severity": "info",
+      "description": "EV cap region (boundary point) for detYear 2027. Slope = 0.2200",
+      "inputs": {
+        "powertrain": "ev",
+        "detYear": 2027,
+        "taxYear": 2029,
+        "catalogusprijs": 30250
+      },
+      "observed": {
+        "bijtelling": 6055,
+        "slope": 0.22
+      }
+    },
+    {
+      "category": "bijtelling",
+      "severity": "info",
+      "description": "EV cap region (boundary point) for detYear 2027. Slope = 0.2200",
+      "inputs": {
+        "powertrain": "ev",
+        "detYear": 2027,
+        "taxYear": 2029,
+        "catalogusprijs": 30500
+      },
+      "observed": {
+        "bijtelling": 6110,
+        "slope": 0.22
+      }
+    },
+    {
+      "category": "bpm",
+      "severity": "info",
+      "description": "Largest single-gram BPM jump for phev.",
+      "inputs": {
+        "powertrain": "phev",
+        "co2": 160
+      },
+      "observed": {
+        "jumpEuro": 660
+      }
+    },
+    {
+      "category": "bpm",
+      "severity": "info",
+      "description": "Largest single-gram BPM jump for petrol.",
+      "inputs": {
+        "powertrain": "petrol",
+        "co2": 160
+      },
+      "observed": {
+        "jumpEuro": 622
+      }
+    },
+    {
+      "category": "bpm",
+      "severity": "info",
+      "description": "Largest single-gram BPM jump for diesel.",
+      "inputs": {
+        "powertrain": "diesel",
+        "co2": 160
+      },
+      "observed": {
+        "jumpEuro": 744.9400000000023
+      }
+    },
+    {
+      "category": "bpm",
+      "severity": "info",
+      "description": "Largest single-gram BPM jump for lpg.",
+      "inputs": {
+        "powertrain": "lpg",
+        "co2": 160
+      },
+      "observed": {
+        "jumpEuro": 622
+      }
+    },
+    {
+      "category": "bpm.crossover",
+      "severity": "info",
+      "description": "CO₂ threshold above which petrol BPM exceeds the EV flat fixed bedrag.",
+      "inputs": {
+        "evBpm": 685
+      },
+      "observed": {
+        "crossoverCo2": 72,
+        "petrolAtCrossover": 692.5
+      }
+    },
+    {
+      "category": "mrb",
+      "severity": "info",
+      "description": "Largest 1-kg MRB jump (weight tier transition) for ev.",
+      "inputs": {
+        "powertrain": "ev",
+        "weightKg": 2500,
+        "province": "Overijssel",
+        "taxYear": 2026
+      },
+      "observed": {
+        "jumpEuro": 663.558
+      }
+    },
+    {
+      "category": "mrb",
+      "severity": "info",
+      "description": "Largest 1-kg MRB jump (weight tier transition) for hydrogen.",
+      "inputs": {
+        "powertrain": "hydrogen",
+        "weightKg": 2500,
+        "province": "Overijssel",
+        "taxYear": 2026
+      },
+      "observed": {
+        "jumpEuro": 663.558
+      }
+    },
+    {
+      "category": "mrb",
+      "severity": "info",
+      "description": "Largest 1-kg MRB jump (weight tier transition) for phev.",
+      "inputs": {
+        "powertrain": "phev",
+        "weightKg": 2500,
+        "province": "Overijssel",
+        "taxYear": 2026
+      },
+      "observed": {
+        "jumpEuro": 1354.1999999999998
+      }
+    },
+    {
+      "category": "mrb",
+      "severity": "info",
+      "description": "Largest 1-kg MRB jump (weight tier transition) for petrol.",
+      "inputs": {
+        "powertrain": "petrol",
+        "weightKg": 2500,
+        "province": "Overijssel",
+        "taxYear": 2026
+      },
+      "observed": {
+        "jumpEuro": 1354.1999999999998
+      }
+    },
+    {
+      "category": "mrb",
+      "severity": "info",
+      "description": "Largest 1-kg MRB jump (weight tier transition) for diesel.",
+      "inputs": {
+        "powertrain": "diesel",
+        "weightKg": 2500,
+        "province": "Overijssel",
+        "taxYear": 2026
+      },
+      "observed": {
+        "jumpEuro": 1760.46
+      }
+    },
+    {
+      "category": "mrb",
+      "severity": "info",
+      "description": "Largest 1-kg MRB jump (weight tier transition) for lpg.",
+      "inputs": {
+        "powertrain": "lpg",
+        "weightKg": 2500,
+        "province": "Overijssel",
+        "taxYear": 2026
+      },
+      "observed": {
+        "jumpEuro": 1895.88
+      }
+    },
+    {
+      "category": "incomeTax",
+      "severity": "info",
+      "description": "Maximum implied marginal tax rate across the income range (over a €100 step).",
+      "inputs": {
+        "incomeAroundEuro": 79300
+      },
+      "observed": {
+        "marginalRate": 0.5601000000000204
+      }
+    },
+    {
+      "category": "incomeTax",
+      "severity": "info",
+      "description": "Continuity at bracket boundary 38883.",
+      "inputs": {
+        "boundary": 38883
+      },
+      "observed": {
+        "below": 13904.557223999998,
+        "above": 13904.564556,
+        "jump": 0.007332000001042616
+      }
+    },
+    {
+      "category": "incomeTax",
+      "severity": "info",
+      "description": "Continuity at bracket boundary 79137.",
+      "inputs": {
+        "boundary": 79137
+      },
+      "observed": {
+        "below": 29023.959444,
+        "above": 29023.968149999997,
+        "jump": 0.008705999996891478
+      }
+    }
+  ]
+}
