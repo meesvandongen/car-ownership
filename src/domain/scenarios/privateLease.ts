@@ -1,15 +1,17 @@
-import type { AppInputs, Scenario, ScenarioResult } from "../types";
+import type { AppInputs, Calculation, Car, ScenarioResult } from "../types";
 import type { TaxData } from "../taxData";
 import { computeIncomeTax } from "../tax/incomeTax";
 import { annualFuelCost } from "./fuel";
 
 export function evaluatePrivateLease(
   inputs: AppInputs,
-  scenario: Scenario,
+  car: Car,
+  calc: Calculation,
   data: TaxData,
 ): ScenarioResult {
   const { drivingProfile, reimbursement, salary, energy } = inputs;
-  const { vehicle, privateLease } = scenario;
+  const { vehicle } = car;
+  const { privateLease } = calc;
 
   const monthlyDownPayment = privateLease.downPayment / privateLease.contractMonths;
 
@@ -51,8 +53,10 @@ export function evaluatePrivateLease(
   const netMonthly = grossMonthly - monthlyReimbursement;
 
   return {
-    id: scenario.id,
-    label: scenario.label,
+    id: calc.id,
+    label: calc.label,
+    carId: car.id,
+    carLabel: car.label,
     kind: "privateLease",
     grossMonthly,
     netMonthly,

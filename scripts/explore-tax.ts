@@ -26,8 +26,8 @@ import {
 } from "../src/domain/tax/incomeTax";
 import { evaluateBusinessLease } from "../src/domain/scenarios/businessLease";
 import { getTaxData } from "../src/domain/taxData";
-import { DEFAULTS, makeScenario } from "../src/defaults";
-import type { Powertrain, Province, AppInputs, Scenario } from "../src/domain/types";
+import { DEFAULTS, makeCalculation, makeCar } from "../src/defaults";
+import type { Powertrain, Province, AppInputs } from "../src/domain/types";
 
 const data = getTaxData(2026);
 const provinces = Object.keys(data.provinces) as Province[];
@@ -436,24 +436,26 @@ function exploreBusinessLease(): void {
     for (const cat of [5_000, 30_000, 60_000, 120_000]) {
       for (const eigenMonthly of [0, 50, 200, 500, 2_000, 50_000]) {
         for (const bruto of [25_000, 50_000, 100_000, 200_000]) {
-          const scenario: Scenario = makeScenario("businessLease");
-          scenario.vehicle = {
-            ...scenario.vehicle,
+          const car = makeCar();
+          car.vehicle = {
+            ...car.vehicle,
             catalogusprijs: cat,
             aanschafprijs: cat * 0.93,
             powertrain,
             detYear: 2026,
           };
-          scenario.businessLease = {
-            ...scenario.businessLease,
+          const calc = makeCalculation(car.id, "businessLease");
+          calc.businessLease = {
+            ...calc.businessLease,
             eigenBijdrage: eigenMonthly,
           };
           const inputs: AppInputs = {
             ...DEFAULTS,
             salary: { ...DEFAULTS.salary, bruto },
-            scenarios: [scenario],
+            cars: [car],
+            calculations: [calc],
           };
-          const r = evaluateBusinessLease(inputs, scenario, data);
+          const r = evaluateBusinessLease(inputs, car, calc, data);
           const bijLine = r.breakdown.find(
             (b) => b.label === "Bijtelling (net tax cost)",
           )!;

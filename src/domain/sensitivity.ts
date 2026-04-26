@@ -8,18 +8,23 @@ export type SharedSweepable =
   | "fuelCostPerLiter"
   | "opportunityCostRate";
 
-export type ScenarioSweepable =
+export type CarSweepable =
   | "catalogusprijs"
   | "aanschafprijs"
   | "co2"
-  | "weightKg"
+  | "weightKg";
+
+export type CalculationSweepable =
   | "residualValue"
   | "monthlyLeaseTariff"
   | "monthlyPayment"
   | "eigenBijdrage"
   | "salarySacrificeMonthly";
 
-export type SweepableNumeric = SharedSweepable | ScenarioSweepable;
+export type SweepableNumeric =
+  | SharedSweepable
+  | CarSweepable
+  | CalculationSweepable;
 
 export const SHARED_SWEEPABLES: SharedSweepable[] = [
   "annualKm",
@@ -29,11 +34,14 @@ export const SHARED_SWEEPABLES: SharedSweepable[] = [
   "opportunityCostRate",
 ];
 
-export const SCENARIO_SWEEPABLES: ScenarioSweepable[] = [
+export const CAR_SWEEPABLES: CarSweepable[] = [
   "catalogusprijs",
   "aanschafprijs",
   "co2",
   "weightKg",
+];
+
+export const CALCULATION_SWEEPABLES: CalculationSweepable[] = [
   "residualValue",
   "monthlyLeaseTariff",
   "monthlyPayment",
@@ -41,8 +49,17 @@ export const SCENARIO_SWEEPABLES: ScenarioSweepable[] = [
   "salarySacrificeMonthly",
 ];
 
-export function isScenarioSweepable(v: SweepableNumeric): v is ScenarioSweepable {
-  return (SCENARIO_SWEEPABLES as readonly string[]).includes(v);
+export type SweepScope =
+  | { kind: "shared" }
+  | { kind: "car"; carId: string }
+  | { kind: "calculation"; calculationId: string };
+
+export function variableScope(
+  v: SweepableNumeric,
+): "shared" | "car" | "calculation" {
+  if ((SHARED_SWEEPABLES as readonly string[]).includes(v)) return "shared";
+  if ((CAR_SWEEPABLES as readonly string[]).includes(v)) return "car";
+  return "calculation";
 }
 
 export interface SweepPoint {
@@ -75,47 +92,53 @@ function withSharedVariable(
   }
 }
 
-function withScenarioVariable(
+function withCarVariable(
   inputs: AppInputs,
-  scenarioId: string,
-  variable: ScenarioSweepable,
+  carId: string,
+  variable: CarSweepable,
   value: number,
 ): AppInputs {
   return {
     ...inputs,
-    scenarios: inputs.scenarios.map((s) => {
-      if (s.id !== scenarioId) return s;
+    cars: inputs.cars.map((c) =>
+      c.id === carId ? { ...c, vehicle: { ...c.vehicle, [variable]: value } } : c,
+    ),
+  };
+}
+
+function withCalcVariable(
+  inputs: AppInputs,
+  calcId: string,
+  variable: CalculationSweepable,
+  value: number,
+): AppInputs {
+  return {
+    ...inputs,
+    calculations: inputs.calculations.map((c) => {
+      if (c.id !== calcId) return c;
       switch (variable) {
-        case "catalogusprijs":
-          return { ...s, vehicle: { ...s.vehicle, catalogusprijs: value } };
-        case "aanschafprijs":
-          return { ...s, vehicle: { ...s.vehicle, aanschafprijs: value } };
-        case "co2":
-          return { ...s, vehicle: { ...s.vehicle, co2: value } };
-        case "weightKg":
-          return { ...s, vehicle: { ...s.vehicle, weightKg: value } };
         case "residualValue":
-          return { ...s, vehicle: { ...s.vehicle, residualValue: value } };
+          return { ...c, ownership: { ...c.ownership, residualValue: value } };
         case "monthlyLeaseTariff":
           return {
-            ...s,
-            businessLease: { ...s.businessLease, monthlyLeaseTariff: value },
+            ...c,
+            businessLease: { ...c.businessLease, monthlyLeaseTariff: value },
           };
         case "monthlyPayment":
           return {
-            ...s,
-            privateLease: { ...s.privateLease, monthlyPayment: value },
+            ...c,
+            privateLease: { ...c.privateLease, monthlyPayment: value },
           };
         case "eigenBijdrage":
           return {
-            ...s,
-            businessLease: { ...s.businessLease, eigenBijdrage: value },
+            ...c,
+            businessLease: { ...c.businessLease, eigenBijdrage: value },
           };
         case "salarySacrificeMonthly":
           return {
-            ...s,
+            ...c,
             businessLease: {
-              ...s.businessLease,
+              ...c.businessLease,
               salarySacrificeMonthly: value,
             },
           };
@@ -127,42 +150,45 @@ function withScenarioVariable(
 export function getCurrentValue(
   inputs: AppInputs,
   variable: SweepableNumeric,
-  scenarioId?: string,
+  scope?: SweepScope,
 ): number {
-  switch (variable) {
-    case "annualKm":
-      return inputs.drivingProfile.annualKm;
-    case "bruto":
-      return inputs.salary.bruto;
-    case "electricityCostPerKwh":
-      return inputs.energy.electricityCostPerKwh;
-    case "fuelCostPerLiter":
-      return inputs.energy.fuelCostPerLiter;
-    case "opportunityCostRate":
-      return inputs.opportunityCostRate;
+  const s = variableScope(variable);
+  if (s === "shared") {
+    switch (variable as SharedSweepable) {
+      case "annualKm":
+        return inputs.drivingProfile.annualKm;
+      case "bruto":
+        return inputs.salary.bruto;
+      case "electricityCostPerKwh":
+        return inputs.energy.electricityCostPerKwh;
+      case "fuelCostPerLiter":
+        return inputs.energy.fuelCostPerLiter;
+      case "opportunityCostRate":
+        return inputs.opportunityCostRate;
+    }
   }
-  const scenario =
-    inputs.scenarios.find((s) => s.id === scenarioId) ?? inputs.scenarios[0];
-  if (!scenario) return 0;
-  switch (variable) {
-    case "catalogusprijs":
-      return scenario.vehicle.catalogusprijs;
-    case "aanschafprijs":
-      return scenario.vehicle.aanschafprijs;
-    case "co2":
-      return scenario.vehicle.co2;
-    case "weightKg":
-      return scenario.vehicle.weightKg;
+  if (s === "car") {
+    const carId = scope?.kind === "car" ? scope.carId : inputs.cars[0]?.id;
+    const car = inputs.cars.find((c) => c.id === carId) ?? inputs.cars[0];
+    if (!car) return 0;
+    return car.vehicle[variable as CarSweepable];
+  }
+  // calculation-scoped
+  const calcId =
+    scope?.kind === "calculation" ? scope.calculationId : inputs.calculations[0]?.id;
+  const calc = inputs.calculations.find((c) => c.id === calcId) ?? inputs.calculations[0];
+  if (!calc) return 0;
+  switch (variable as CalculationSweepable) {
     case "residualValue":
-      return scenario.vehicle.residualValue;
+      return calc.ownership.residualValue;
     case "monthlyLeaseTariff":
-      return scenario.businessLease.monthlyLeaseTariff;
+      return calc.businessLease.monthlyLeaseTariff;
     case "monthlyPayment":
-      return scenario.privateLease.monthlyPayment;
+      return calc.privateLease.monthlyPayment;
     case "eigenBijdrage":
-      return scenario.businessLease.eigenBijdrage;
+      return calc.businessLease.eigenBijdrage;
     case "salarySacrificeMonthly":
-      return scenario.businessLease.salarySacrificeMonthly;
+      return calc.businessLease.salarySacrificeMonthly;
   }
 }
 
@@ -170,9 +196,9 @@ export function suggestRange(
   inputs: AppInputs,
   variable: SweepableNumeric,
   steps = 21,
-  scenarioId?: string,
+  scope?: SweepScope,
 ): number[] {
-  const current = getCurrentValue(inputs, variable, scenarioId);
+  const current = getCurrentValue(inputs, variable, scope);
   const min = Math.max(0, current * 0.5);
   const max = current * 1.5 || 100;
   const step = (max - min) / (steps - 1);
@@ -183,18 +209,32 @@ export function sweep(
   inputs: AppInputs,
   variable: SweepableNumeric,
   range: number[],
-  scenarioId?: string,
+  scope?: SweepScope,
 ): SweepPoint[] {
-  if (isScenarioSweepable(variable)) {
-    const id = scenarioId ?? inputs.scenarios[0]?.id;
-    if (!id) return [];
+  const s = variableScope(variable);
+  if (s === "shared") {
     return range.map((value) => ({
       x: value,
-      result: compareAll(withScenarioVariable(inputs, id, variable, value)),
+      result: compareAll(withSharedVariable(inputs, variable as SharedSweepable, value)),
     }));
   }
+  if (s === "car") {
+    const carId = scope?.kind === "car" ? scope.carId : inputs.cars[0]?.id;
+    if (!carId) return [];
+    return range.map((value) => ({
+      x: value,
+      result: compareAll(
+        withCarVariable(inputs, carId, variable as CarSweepable, value),
+      ),
+    }));
+  }
+  const calcId =
+    scope?.kind === "calculation" ? scope.calculationId : inputs.calculations[0]?.id;
+  if (!calcId) return [];
   return range.map((value) => ({
     x: value,
-    result: compareAll(withSharedVariable(inputs, variable, value)),
+    result: compareAll(
+      withCalcVariable(inputs, calcId, variable as CalculationSweepable, value),
+    ),
   }));
 }

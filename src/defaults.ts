@@ -1,9 +1,10 @@
 import type {
   AppInputs,
   BusinessLeaseInputs,
+  Calculation,
+  Car,
   OwnershipInputs,
   PrivateLeaseInputs,
-  Scenario,
   ScenarioKind,
   VehicleInputs,
 } from "./domain/types";
@@ -15,7 +16,6 @@ export const DEFAULT_VEHICLE: VehicleInputs = {
   co2: 0,
   weightKg: 1850,
   detYear: 2026,
-  residualValue: 18_000,
   consumptionKwhPer100km: 18,
   consumptionLper100km: 6.5,
 };
@@ -27,6 +27,7 @@ export const DEFAULT_OWNERSHIP: OwnershipInputs = {
   insurancePerMonth: 95,
   maintenancePerYear: 800,
   holdingMonths: 60,
+  residualValue: 18_000,
 };
 
 export const DEFAULT_PRIVATE_LEASE: PrivateLeaseInputs = {
@@ -47,36 +48,47 @@ export const DEFAULT_BUSINESS_LEASE: BusinessLeaseInputs = {
   salarySacrificeMonthly: 0,
 };
 
-const SCENARIO_LABELS: Record<ScenarioKind, string> = {
-  ownership: "Private ownership",
+const KIND_LABELS: Record<ScenarioKind, string> = {
+  ownership: "Ownership",
   privateLease: "Private lease",
   businessLease: "Business lease",
 };
 
-let idCounter = 0;
-export function newScenarioId(): string {
-  idCounter += 1;
-  return `s${Date.now().toString(36)}-${idCounter}`;
+export function calculationKindLabel(kind: ScenarioKind): string {
+  return KIND_LABELS[kind];
 }
 
-export function makeScenario(
-  kind: ScenarioKind,
-  label: string = SCENARIO_LABELS[kind],
-): Scenario {
+let idCounter = 0;
+export function newId(prefix: string): string {
+  idCounter += 1;
+  return `${prefix}-${Date.now().toString(36)}-${idCounter}`;
+}
+
+export function makeCar(label = "My car"): Car {
   return {
-    id: newScenarioId(),
+    id: newId("car"),
+    label,
+    vehicle: structuredClone(DEFAULT_VEHICLE),
+  };
+}
+
+export function makeCalculation(
+  carId: string,
+  kind: ScenarioKind,
+  label: string = KIND_LABELS[kind],
+): Calculation {
+  return {
+    id: newId("calc"),
+    carId,
     label,
     kind,
-    vehicle: structuredClone(DEFAULT_VEHICLE),
     ownership: structuredClone(DEFAULT_OWNERSHIP),
     privateLease: structuredClone(DEFAULT_PRIVATE_LEASE),
     businessLease: structuredClone(DEFAULT_BUSINESS_LEASE),
   };
 }
 
-export function defaultScenarioLabel(kind: ScenarioKind): string {
-  return SCENARIO_LABELS[kind];
-}
+const defaultCar = makeCar("My car");
 
 export const DEFAULTS: AppInputs = {
   taxYear: 2026,
@@ -102,9 +114,10 @@ export const DEFAULTS: AppInputs = {
   },
   opportunityCostRate: 0.04,
   comparisonMonths: 60,
-  scenarios: [
-    makeScenario("ownership"),
-    makeScenario("privateLease"),
-    makeScenario("businessLease"),
+  cars: [defaultCar],
+  calculations: [
+    makeCalculation(defaultCar.id, "ownership"),
+    makeCalculation(defaultCar.id, "privateLease"),
+    makeCalculation(defaultCar.id, "businessLease"),
   ],
 };

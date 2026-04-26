@@ -1,4 +1,4 @@
-import type { AppInputs, Scenario, ScenarioResult } from "../types";
+import type { AppInputs, Calculation, Car, ScenarioResult } from "../types";
 import type { TaxData } from "../taxData";
 import { calculateAnnualMrb } from "../tax/mrb";
 import { calculateBpm } from "../tax/bpm";
@@ -8,15 +8,17 @@ import { annuityPayment } from "./financing";
 
 export function evaluateOwnership(
   inputs: AppInputs,
-  scenario: Scenario,
+  car: Car,
+  calc: Calculation,
   data: TaxData,
 ): ScenarioResult {
   const { drivingProfile, salary, reimbursement, energy } = inputs;
-  const { vehicle, ownership } = scenario;
+  const { vehicle } = car;
+  const { ownership } = calc;
 
   // Depreciation (straight line) over holding period.
   const depreciation =
-    (vehicle.aanschafprijs - vehicle.residualValue) / ownership.holdingMonths;
+    (vehicle.aanschafprijs - ownership.residualValue) / ownership.holdingMonths;
 
   // Financing
   const loanPrincipal = Math.max(0, vehicle.aanschafprijs - ownership.downPayment);
@@ -55,7 +57,7 @@ export function evaluateOwnership(
   // assumed paid off). Average tied-up own capital ≈ (downPayment + residualValue)/2.
   // This captures the foregone return on cash that's locked into a depreciating asset.
   const cappedDownPayment = Math.min(ownership.downPayment, vehicle.aanschafprijs);
-  const averageOwnCapital = (cappedDownPayment + vehicle.residualValue) / 2;
+  const averageOwnCapital = (cappedDownPayment + ownership.residualValue) / 2;
   const monthlyOpportunityCost =
     (averageOwnCapital * inputs.opportunityCostRate) / 12;
 
@@ -96,8 +98,10 @@ export function evaluateOwnership(
   const netMonthly = grossMonthly - monthlyReimbursement;
 
   return {
-    id: scenario.id,
-    label: scenario.label,
+    id: calc.id,
+    label: calc.label,
+    carId: car.id,
+    carLabel: car.label,
     kind: "ownership",
     grossMonthly,
     netMonthly,

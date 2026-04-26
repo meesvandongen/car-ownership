@@ -18,6 +18,10 @@ export type Role = "employee" | "dga" | "zzp";
 
 export type ScenarioKind = "ownership" | "privateLease" | "businessLease";
 
+/**
+ * The intrinsic spec of a vehicle. Properties of the car itself, independent
+ * of how it's acquired. A single Car can back multiple Calculations.
+ */
 export interface VehicleInputs {
   catalogusprijs: number;
   aanschafprijs: number;
@@ -25,9 +29,14 @@ export interface VehicleInputs {
   co2: number;
   weightKg: number;
   detYear: number;
-  residualValue: number;
   consumptionKwhPer100km: number;
   consumptionLper100km: number;
+}
+
+export interface Car {
+  id: string;
+  label: string;
+  vehicle: VehicleInputs;
 }
 
 export interface SalaryInputs {
@@ -37,6 +46,12 @@ export interface SalaryInputs {
   hypotheekrenteAftrek: number;
 }
 
+/**
+ * Inputs specific to an ownership calculation. `holdingMonths` and
+ * `residualValue` live here (not on the Car) because they belong to the
+ * decision of buying-and-holding for a particular period — the same car can
+ * be evaluated against multiple holding periods with different residuals.
+ */
 export interface OwnershipInputs {
   downPayment: number;
   interestRate: number;
@@ -44,6 +59,7 @@ export interface OwnershipInputs {
   insurancePerMonth: number;
   maintenancePerYear: number;
   holdingMonths: number;
+  residualValue: number;
 }
 
 export interface PrivateLeaseInputs {
@@ -84,11 +100,16 @@ export interface EnergyPrices {
   fuelCostPerLiter: number;
 }
 
-export interface Scenario {
+/**
+ * A single contract / acquisition scenario for a specific Car. Multiple
+ * Calculations can share one Car (e.g. ownership-vs-business-lease for the
+ * same vehicle), avoiding duplicated vehicle inputs.
+ */
+export interface Calculation {
   id: string;
+  carId: string;
   label: string;
   kind: ScenarioKind;
-  vehicle: VehicleInputs;
   ownership: OwnershipInputs;
   privateLease: PrivateLeaseInputs;
   businessLease: BusinessLeaseInputs;
@@ -108,7 +129,8 @@ export interface AppInputs {
   // so that ownership (with a short holding period) is not unfairly compared
   // against a 5-year lease total.
   comparisonMonths: number;
-  scenarios: Scenario[];
+  cars: Car[];
+  calculations: Calculation[];
 }
 
 export interface CostBreakdown {
@@ -119,6 +141,8 @@ export interface CostBreakdown {
 export interface ScenarioResult {
   id: string;
   label: string;
+  carId: string;
+  carLabel: string;
   kind: ScenarioKind;
   netMonthly: number;
   grossMonthly: number;
@@ -130,6 +154,6 @@ export interface ScenarioResult {
 }
 
 export interface CompareResult {
-  scenarios: ScenarioResult[];
+  results: ScenarioResult[];
   warnings: string[];
 }

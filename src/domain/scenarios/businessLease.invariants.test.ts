@@ -2,8 +2,8 @@ import { describe, it } from "vitest";
 import fc from "fast-check";
 import { evaluateBusinessLease } from "./businessLease";
 import { getTaxData } from "../taxData";
-import { DEFAULTS, makeScenario } from "../../defaults";
-import type { AppInputs, Powertrain, Province, Scenario } from "../types";
+import { DEFAULTS, makeCalculation, makeCar } from "../../defaults";
+import type { AppInputs, Calculation, Car, Powertrain, Province } from "../types";
 
 const data = getTaxData(2026);
 const provinces = Object.keys(data.provinces) as Province[];
@@ -11,7 +11,8 @@ const powertrains: Powertrain[] = ["ev", "hydrogen", "phev", "petrol", "diesel",
 
 interface Bundle {
   inputs: AppInputs;
-  scenario: Scenario;
+  car: Car;
+  calc: Calculation;
 }
 
 const arbBundle = (): fc.Arbitrary<Bundle> =>
@@ -32,17 +33,18 @@ const arbBundle = (): fc.Arbitrary<Bundle> =>
       taxYear: fc.integer({ min: 2026, max: 2030 }),
     })
     .map((p) => {
-      const scenario = makeScenario("businessLease");
-      scenario.vehicle = {
-        ...scenario.vehicle,
+      const car = makeCar();
+      car.vehicle = {
+        ...car.vehicle,
         catalogusprijs: p.catalogusprijs,
         aanschafprijs: p.catalogusprijs * 0.93,
         powertrain: p.powertrain,
         detYear: p.detYear,
         weightKg: p.weightKg,
       };
-      scenario.businessLease = {
-        ...scenario.businessLease,
+      const calc = makeCalculation(car.id, "businessLease");
+      calc.businessLease = {
+        ...calc.businessLease,
         eigenBijdrage: p.eigenBijdrageMonthly,
         fuelCardPrivate: p.fuelCardPrivate,
         rittenregistratie: p.rittenregistratie,
@@ -60,16 +62,17 @@ const arbBundle = (): fc.Arbitrary<Bundle> =>
           commuteKm: p.annualKm * (1 - p.privateFraction) * 0.5,
         },
         salary: { ...DEFAULTS.salary, bruto: p.bruto },
-        scenarios: [scenario],
+        cars: [car],
+        calculations: [calc],
       };
-      return { inputs, scenario };
+      return { inputs, car, calc };
     });
 
 describe("businessLease — property-based invariants", () => {
   it("grossMonthly is never negative for any input combination", () => {
     fc.assert(
-      fc.property(arbBundle(), ({ inputs, scenario }) => {
-        const r = evaluateBusinessLease(inputs, scenario, data);
+      fc.property(arbBundle(), ({ inputs, car, calc }) => {
+        const r = evaluateBusinessLease(inputs, car, calc, data);
         return r.grossMonthly >= -1e-6 && Number.isFinite(r.grossMonthly);
       }),
       { numRuns: 2000 },
@@ -81,19 +84,19 @@ describe("businessLease — property-based invariants", () => {
       fc.property(
         arbBundle(),
         fc.double({ min: 0, max: 50_000, noNaN: true }),
-        ({ inputs, scenario }, hugeEigenBijdrage) => {
-          const adjusted: Scenario = {
-            ...scenario,
+        ({ inputs, car, calc }, hugeEigenBijdrage) => {
+          const adjusted: Calculation = {
+            ...calc,
             businessLease: {
-              ...scenario.businessLease,
+              ...calc.businessLease,
               eigenBijdrage: hugeEigenBijdrage,
             },
           };
           const adjustedInputs: AppInputs = {
             ...inputs,
-            scenarios: [adjusted],
+            calculations: [adjusted],
           };
-          const r = evaluateBusinessLease(adjustedInputs, adjusted, data);
+          const r = evaluateBusinessLease(adjustedInputs, car, adjusted, data);
           const bijtellingLine = r.breakdown.find(
             (b) => b.label === "Bijtelling (net tax cost)",
           );
@@ -109,10 +112,10 @@ describe("businessLease — property-based invariants", () => {
 
   it("eigen bijdrage line item never exceeds the gross bijtelling (1:1 cap)", () => {
     fc.assert(
-      fc.property(arbBundle(), ({ inputs, scenario }) => {
-        const r = evaluateBusinessLease(inputs, scenario, data);
+      fc.property(arbBundle(), ({ inputs, car, calc }) => {
+        const r = evaluateBusinessLease(inputs, car, calc, data);
         const eigenLine = r.breakdown.find((b) => b.label === "Eigen bijdrage")!;
-        return eigenLine.monthly <= scenario.businessLease.eigenBijdrage + 1e-6;
+        return eigenLine.monthly <= calc.businessLease.eigenBijdrage + 1e-6;
       }),
       { numRuns: 1000 },
     );
@@ -123,17 +126,17 @@ describe("businessLease — property-based invariants", () => {
       fc.property(
         arbBundle(),
         fc.double({ min: 1, max: 1_000, noNaN: true }),
-        ({ inputs, scenario }, deltaMonthly) => {
-          const before = evaluateBusinessLease(inputs, scenario, data);
-          const next: Scenario = {
-            ...scenario,
+        ({ inputs, car, calc }, deltaMonthly) => {
+          const before = evaluateBusinessLease(inputs, car, calc, data);
+          const next: Calculation = {
+            ...calc,
             businessLease: {
-              ...scenario.businessLease,
-              eigenBijdrage: scenario.businessLease.eigenBijdrage + deltaMonthly,
+              ...calc.businessLease,
+              eigenBijdrage: calc.businessLease.eigenBijdrage + deltaMonthly,
             },
           };
-          const nextInputs: AppInputs = { ...inputs, scenarios: [next] };
-          const after = evaluateBusinessLease(nextInputs, next, data);
+          const nextInputs: AppInputs = { ...inputs, calculations: [next] };
+          const after = evaluateBusinessLease(nextInputs, car, next, data);
           return after.grossMonthly >= before.grossMonthly - 1e-6;
         },
       ),
@@ -146,17 +149,17 @@ describe("businessLease — property-based invariants", () => {
       fc.property(
         arbBundle(),
         fc.double({ min: 0, max: 499, noNaN: true }),
-        ({ inputs, scenario }, lowPrivateKm) => {
-          const adjustedScenario: Scenario = {
-            ...scenario,
-            businessLease: { ...scenario.businessLease, rittenregistratie: true },
+        ({ inputs, car, calc }, lowPrivateKm) => {
+          const adjustedCalc: Calculation = {
+            ...calc,
+            businessLease: { ...calc.businessLease, rittenregistratie: true },
           };
           const adjustedInputs: AppInputs = {
             ...inputs,
             drivingProfile: { ...inputs.drivingProfile, privateKm: lowPrivateKm },
-            scenarios: [adjustedScenario],
+            calculations: [adjustedCalc],
           };
-          const r = evaluateBusinessLease(adjustedInputs, adjustedScenario, data);
+          const r = evaluateBusinessLease(adjustedInputs, car, adjustedCalc, data);
           const line = r.breakdown.find(
             (b) => b.label === "Bijtelling (net tax cost)",
           )!;

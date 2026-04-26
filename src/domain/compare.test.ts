@@ -1,48 +1,61 @@
 import { describe, expect, it } from "vitest";
 import { compareAll } from "./compare";
 import { sweep, suggestRange } from "./sensitivity";
-import { DEFAULTS } from "../defaults";
-import type { AppInputs, ScenarioKind, ScenarioResult } from "./types";
+import { DEFAULTS, makeCalculation, makeCar } from "../defaults";
+import type {
+  AppInputs,
+  Calculation,
+  ScenarioKind,
+  ScenarioResult,
+} from "./types";
 
-function byKind(r: { scenarios: ScenarioResult[] }, kind: ScenarioKind): ScenarioResult {
-  const found = r.scenarios.find((s) => s.kind === kind);
-  if (!found) throw new Error(`no scenario of kind ${kind} in result`);
+function byKind(r: { results: ScenarioResult[] }, kind: ScenarioKind): ScenarioResult {
+  const found = r.results.find((s) => s.kind === kind);
+  if (!found) throw new Error(`no calculation of kind ${kind} in result`);
   return found;
 }
 
-function patchScenario(
+function patchCalc(
   inputs: AppInputs,
   kind: ScenarioKind,
-  patch: (s: AppInputs["scenarios"][number]) => AppInputs["scenarios"][number],
+  patch: (c: Calculation) => Calculation,
 ): AppInputs {
   return {
     ...inputs,
-    scenarios: inputs.scenarios.map((s) => (s.kind === kind ? patch(s) : s)),
+    calculations: inputs.calculations.map((c) => (c.kind === kind ? patch(c) : c)),
   };
 }
 
 describe("compareAll", () => {
-  it("produces a result for each scenario with finite numbers", () => {
+  it("produces a result for each calculation with finite numbers", () => {
     const r = compareAll(DEFAULTS);
-    expect(r.scenarios.length).toBe(DEFAULTS.scenarios.length);
-    for (const s of r.scenarios) {
+    expect(r.results.length).toBe(DEFAULTS.calculations.length);
+    for (const s of r.results) {
       expect(Number.isFinite(s.netMonthly)).toBe(true);
       expect(Number.isFinite(s.grossMonthly)).toBe(true);
       expect(Number.isFinite(s.totalCost)).toBe(true);
     }
   });
 
+  it("results carry the car label so multi-car comparisons stay legible", () => {
+    const r = compareAll(DEFAULTS);
+    for (const s of r.results) {
+      expect(s.carLabel.length).toBeGreaterThan(0);
+      expect(s.carId).toBe(DEFAULTS.cars[0].id);
+    }
+  });
+
   it("business lease net cost rises when bijtelling is taken (vs zero-bijtelling)", () => {
     const withBijtelling = compareAll(DEFAULTS);
-    const noBij: AppInputs = patchScenario(
+    const noBij: AppInputs = patchCalc(
       {
         ...DEFAULTS,
         drivingProfile: { ...DEFAULTS.drivingProfile, privateKm: 100 },
       },
       "businessLease",
-      (s) => ({
-        ...s,
-        businessLease: { ...s.businessLease, rittenregistratie: true },
+      (c) => ({
+        ...c,
+        businessLease: { ...c.businessLease, rittenregistratie: true },
       }),
     );
     const withoutBijtelling = compareAll(noBij);
@@ -74,9 +87,9 @@ describe("compareAll", () => {
   });
 
   it("opportunity cost increases private lease cost when there's a down payment", () => {
-    const inputs = patchScenario(DEFAULTS, "privateLease", (s) => ({
-      ...s,
-      privateLease: { ...s.privateLease, downPayment: 5_000 },
+    const inputs = patchCalc(DEFAULTS, "privateLease", (c) => ({
+      ...c,
+      privateLease: { ...c.privateLease, downPayment: 5_000 },
     }));
     const noOpp = compareAll({ ...inputs, opportunityCostRate: 0 });
     const withOpp = compareAll({ ...inputs, opportunityCostRate: 0.05 });
@@ -96,9 +109,9 @@ describe("compareAll", () => {
   it("salary sacrifice increases business lease net cost", () => {
     const noSacrifice = compareAll(DEFAULTS);
     const withSacrifice = compareAll(
-      patchScenario(DEFAULTS, "businessLease", (s) => ({
-        ...s,
-        businessLease: { ...s.businessLease, salarySacrificeMonthly: 500 },
+      patchCalc(DEFAULTS, "businessLease", (c) => ({
+        ...c,
+        businessLease: { ...c.businessLease, salarySacrificeMonthly: 500 },
       })),
     );
     expect(byKind(withSacrifice, "businessLease").netMonthly).toBeGreaterThan(
@@ -110,10 +123,10 @@ describe("compareAll", () => {
     const noSacrifice = compareAll(DEFAULTS);
     const sacrificeAmount = 500;
     const withSacrifice = compareAll(
-      patchScenario(DEFAULTS, "businessLease", (s) => ({
-        ...s,
+      patchCalc(DEFAULTS, "businessLease", (c) => ({
+        ...c,
         businessLease: {
-          ...s.businessLease,
+          ...c.businessLease,
           salarySacrificeMonthly: sacrificeAmount,
         },
       })),
@@ -125,7 +138,7 @@ describe("compareAll", () => {
     expect(delta).toBeLessThan(sacrificeAmount);
   });
 
-  it("totalCost honours the comparisonMonths horizon for all scenarios", () => {
+  it("totalCost honours the comparisonMonths horizon for all calculations", () => {
     const r36 = compareAll({ ...DEFAULTS, comparisonMonths: 36 });
     const r60 = compareAll({ ...DEFAULTS, comparisonMonths: 60 });
     for (const kind of ["ownership", "privateLease", "businessLease"] as const) {
@@ -142,9 +155,9 @@ describe("compareAll", () => {
 
   it("ownership totalCost no longer truncates when holding < comparison horizon", () => {
     const r = compareAll({
-      ...patchScenario(DEFAULTS, "ownership", (s) => ({
-        ...s,
-        ownership: { ...s.ownership, holdingMonths: 36 },
+      ...patchCalc(DEFAULTS, "ownership", (c) => ({
+        ...c,
+        ownership: { ...c.ownership, holdingMonths: 36 },
       })),
       comparisonMonths: 60,
     });
@@ -152,59 +165,116 @@ describe("compareAll", () => {
     expect(o.totalCost).toBeCloseTo(o.netMonthly * 60, 5);
   });
 
-  it("supports multiple scenarios of the same kind with different cars", () => {
-    const cheaper = DEFAULTS.scenarios.find((s) => s.kind === "ownership")!;
-    const dearer = {
-      ...structuredClone(cheaper),
-      id: "own-2",
-      label: "Ownership (premium)",
-      vehicle: { ...cheaper.vehicle, aanschafprijs: cheaper.vehicle.aanschafprijs * 1.5 },
-    };
-    const r = compareAll({
+  it("two calculations on the SAME car share vehicle inputs (no duplication)", () => {
+    // Two ownership calcs on one car: changing the car's catalogusprijs changes
+    // *both* calculations' cost components, proving they share storage.
+    const car = makeCar("Tesla Model 3");
+    const calcA = makeCalculation(car.id, "ownership", "5-year");
+    const calcB = makeCalculation(car.id, "ownership", "3-year");
+    calcB.ownership.holdingMonths = 36;
+    calcB.ownership.residualValue = 24_000;
+    const baseInputs: AppInputs = {
       ...DEFAULTS,
-      scenarios: [cheaper, dearer, ...DEFAULTS.scenarios.slice(1)],
-    });
-    expect(r.scenarios.length).toBe(4);
-    const cheap = r.scenarios[0];
-    const expensive = r.scenarios[1];
-    expect(cheap.kind).toBe("ownership");
-    expect(expensive.kind).toBe("ownership");
-    expect(expensive.netMonthly).toBeGreaterThan(cheap.netMonthly);
+      cars: [car],
+      calculations: [calcA, calcB],
+    };
+    const baseline = compareAll(baseInputs).results;
+    const moved = compareAll({
+      ...baseInputs,
+      cars: [{ ...car, vehicle: { ...car.vehicle, aanschafprijs: car.vehicle.aanschafprijs * 1.5 } }],
+    }).results;
+    expect(moved[0].netMonthly).toBeGreaterThan(baseline[0].netMonthly);
+    expect(moved[1].netMonthly).toBeGreaterThan(baseline[1].netMonthly);
   });
 
-  it("preserves scenario order and labels in the result", () => {
-    const r = compareAll(DEFAULTS);
-    expect(r.scenarios.map((s) => s.label)).toEqual(
-      DEFAULTS.scenarios.map((s) => s.label),
-    );
-    expect(r.scenarios.map((s) => s.id)).toEqual(
-      DEFAULTS.scenarios.map((s) => s.id),
-    );
+  it("supports calculations across multiple cars", () => {
+    const carA = makeCar("Cheap car");
+    const carB = makeCar("Premium car");
+    carB.vehicle = {
+      ...carB.vehicle,
+      catalogusprijs: carA.vehicle.catalogusprijs * 1.5,
+      aanschafprijs: carA.vehicle.aanschafprijs * 1.5,
+    };
+    const calcA = makeCalculation(carA.id, "ownership", "Cheap (own)");
+    const calcB = makeCalculation(carB.id, "ownership", "Premium (own)");
+    const r = compareAll({
+      ...DEFAULTS,
+      cars: [carA, carB],
+      calculations: [calcA, calcB],
+    });
+    expect(r.results.length).toBe(2);
+    expect(r.results[1].netMonthly).toBeGreaterThan(r.results[0].netMonthly);
+    expect(r.results[0].carLabel).toBe("Cheap car");
+    expect(r.results[1].carLabel).toBe("Premium car");
+  });
+
+  it("emits a warning when a calculation references a missing car", () => {
+    const car = DEFAULTS.cars[0];
+    const orphan = makeCalculation("car-does-not-exist", "ownership", "Orphan");
+    const inputs: AppInputs = {
+      ...DEFAULTS,
+      cars: [car],
+      calculations: [...DEFAULTS.calculations, orphan],
+    };
+    const r = compareAll(inputs);
+    expect(r.results.find((x) => x.id === orphan.id)).toBeUndefined();
+    expect(r.warnings.some((w) => w.includes("Orphan"))).toBe(true);
   });
 });
 
 describe("sensitivity sweep", () => {
-  it("returns one comparison per range value (shared variable)", () => {
+  it("returns one comparison per range value (shared variable affects all)", () => {
     const range = suggestRange(DEFAULTS, "annualKm", 11);
     const points = sweep(DEFAULTS, "annualKm", range);
     expect(points).toHaveLength(11);
     for (const p of points) {
-      for (const s of p.result.scenarios) {
+      for (const s of p.result.results) {
         expect(Number.isFinite(s.netMonthly)).toBe(true);
       }
     }
   });
 
-  it("scenario-scoped sweep only changes the targeted scenario", () => {
-    const ownership = DEFAULTS.scenarios.find((s) => s.kind === "ownership")!;
-    const range = suggestRange(DEFAULTS, "catalogusprijs", 5, ownership.id);
-    const points = sweep(DEFAULTS, "catalogusprijs", range, ownership.id);
-    const baselinePrivateLease = compareAll(DEFAULTS).scenarios.find(
-      (s) => s.kind === "privateLease",
+  it("car-scoped sweep only affects calculations of that car", () => {
+    const carA = makeCar("A");
+    const carB = makeCar("B");
+    const calcA = makeCalculation(carA.id, "ownership", "A-own");
+    const calcB = makeCalculation(carB.id, "ownership", "B-own");
+    const inputs: AppInputs = {
+      ...DEFAULTS,
+      cars: [carA, carB],
+      calculations: [calcA, calcB],
+    };
+    const range = suggestRange(inputs, "catalogusprijs", 5, {
+      kind: "car",
+      carId: carA.id,
+    });
+    const points = sweep(inputs, "catalogusprijs", range, {
+      kind: "car",
+      carId: carA.id,
+    });
+    const baselineB = compareAll(inputs).results.find((r) => r.id === calcB.id)!.netMonthly;
+    for (const p of points) {
+      const bRes = p.result.results.find((r) => r.id === calcB.id)!;
+      expect(bRes.netMonthly).toBe(baselineB);
+    }
+  });
+
+  it("calculation-scoped sweep only affects the chosen calculation", () => {
+    const ownershipCalc = DEFAULTS.calculations.find((c) => c.kind === "ownership")!;
+    const range = suggestRange(DEFAULTS, "residualValue", 5, {
+      kind: "calculation",
+      calculationId: ownershipCalc.id,
+    });
+    const points = sweep(DEFAULTS, "residualValue", range, {
+      kind: "calculation",
+      calculationId: ownershipCalc.id,
+    });
+    const baselineLease = compareAll(DEFAULTS).results.find(
+      (r) => r.kind === "privateLease",
     )!.netMonthly;
     for (const p of points) {
-      const pl = p.result.scenarios.find((s) => s.kind === "privateLease")!;
-      expect(pl.netMonthly).toBe(baselinePrivateLease);
+      const lease = p.result.results.find((r) => r.kind === "privateLease")!;
+      expect(lease.netMonthly).toBe(baselineLease);
     }
   });
 });

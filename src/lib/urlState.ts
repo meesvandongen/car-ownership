@@ -1,5 +1,5 @@
-import type { AppInputs, Scenario } from "../domain/types";
-import { newScenarioId } from "../defaults";
+import type { AppInputs, Calculation, Car } from "../domain/types";
+import { newId } from "../defaults";
 
 const SHARED_KEYS: { path: string[]; key: string }[] = [
   { path: ["taxYear"], key: "ty" },
@@ -38,6 +38,22 @@ function setAt(obj: Record<string, unknown>, path: string[], value: unknown): vo
   cur[path[path.length - 1]] = value;
 }
 
+interface SerializedCar {
+  id: string;
+  label: string;
+  vehicle: Car["vehicle"];
+}
+
+interface SerializedCalc {
+  id: string;
+  carId: string;
+  label: string;
+  kind: Calculation["kind"];
+  ownership: Calculation["ownership"];
+  privateLease: Calculation["privateLease"];
+  businessLease: Calculation["businessLease"];
+}
+
 export function serializeToUrl(inputs: AppInputs): string {
   const params = new URLSearchParams();
   for (const { path, key } of SHARED_KEYS) {
@@ -45,19 +61,45 @@ export function serializeToUrl(inputs: AppInputs): string {
     if (v === undefined || v === null) continue;
     params.set(key, String(v));
   }
-  // Scenarios: strip the runtime-only `id` field; on load we generate fresh ids.
-  const slim = inputs.scenarios.map(({ id: _id, ...rest }) => rest);
-  params.set("s", JSON.stringify(slim));
+  // Stable ids in the URL preserve the car↔calculation links across reloads.
+  const cars: SerializedCar[] = inputs.cars.map((c) => ({
+    id: c.id,
+    label: c.label,
+    vehicle: c.vehicle,
+  }));
+  const calcs: SerializedCalc[] = inputs.calculations.map((c) => ({
+    id: c.id,
+    carId: c.carId,
+    label: c.label,
+    kind: c.kind,
+    ownership: c.ownership,
+    privateLease: c.privateLease,
+    businessLease: c.businessLease,
+  }));
+  params.set("cars", JSON.stringify(cars));
+  params.set("calcs", JSON.stringify(calcs));
   return params.toString();
 }
 
-function isScenarioLike(v: unknown): v is Omit<Scenario, "id"> {
+function isCarLike(v: unknown): v is SerializedCar {
   if (!v || typeof v !== "object") return false;
   const o = v as Record<string, unknown>;
   return (
+    typeof o.id === "string" &&
+    typeof o.label === "string" &&
+    typeof o.vehicle === "object" &&
+    o.vehicle !== null
+  );
+}
+
+function isCalcLike(v: unknown): v is SerializedCalc {
+  if (!v || typeof v !== "object") return false;
+  const o = v as Record<string, unknown>;
+  return (
+    typeof o.id === "string" &&
+    typeof o.carId === "string" &&
     typeof o.label === "string" &&
     typeof o.kind === "string" &&
-    typeof o.vehicle === "object" &&
     typeof o.ownership === "object" &&
     typeof o.privateLease === "object" &&
     typeof o.businessLease === "object"
@@ -84,18 +126,46 @@ export function applyUrlToInputs(base: AppInputs, search: string): AppInputs {
       setAt(next as unknown as Record<string, unknown>, path, raw);
     }
   }
-  const sRaw = params.get("s");
-  if (sRaw) {
+
+  const carsRaw = params.get("cars");
+  const calcsRaw = params.get("calcs");
+  if (carsRaw && calcsRaw) {
     try {
-      const parsed = JSON.parse(sRaw);
-      if (Array.isArray(parsed) && parsed.length > 0 && parsed.every(isScenarioLike)) {
-        next.scenarios = parsed.map((s) => ({
-          id: newScenarioId(),
-          ...(s as Omit<Scenario, "id">),
-        }));
+      const parsedCars = JSON.parse(carsRaw);
+      const parsedCalcs = JSON.parse(calcsRaw);
+      if (
+        Array.isArray(parsedCars) &&
+        Array.isArray(parsedCalcs) &&
+        parsedCars.length > 0 &&
+        parsedCalcs.length > 0 &&
+        parsedCars.every(isCarLike) &&
+        parsedCalcs.every(isCalcLike)
+      ) {
+        // Re-id everything to avoid collisions, but preserve the carId links.
+        const idMap = new Map<string, string>();
+        const cars: Car[] = parsedCars.map((c) => {
+          const fresh = newId("car");
+          idMap.set(c.id, fresh);
+          return { id: fresh, label: c.label, vehicle: c.vehicle };
+        });
+        const calcs: Calculation[] = parsedCalcs
+          .filter((c) => idMap.has(c.carId))
+          .map((c) => ({
+            id: newId("calc"),
+            carId: idMap.get(c.carId)!,
+            label: c.label,
+            kind: c.kind,
+            ownership: c.ownership,
+            privateLease: c.privateLease,
+            businessLease: c.businessLease,
+          }));
+        if (cars.length > 0 && calcs.length > 0) {
+          next.cars = cars;
+          next.calculations = calcs;
+        }
       }
     } catch {
-      // ignore malformed scenarios payload, keep defaults
+      // ignore malformed payload, keep defaults
     }
   }
   return next;

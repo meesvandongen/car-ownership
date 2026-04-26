@@ -1,4 +1,4 @@
-import type { AppInputs, Scenario, ScenarioResult } from "../types";
+import type { AppInputs, Calculation, Car, ScenarioResult } from "../types";
 import type { TaxData } from "../taxData";
 import { calculateBijtelling } from "../tax/bijtelling";
 import { computeIncomeTax, marginalNetCost } from "../tax/incomeTax";
@@ -6,11 +6,13 @@ import { annualFuelCost } from "./fuel";
 
 export function evaluateBusinessLease(
   inputs: AppInputs,
-  scenario: Scenario,
+  car: Car,
+  calc: Calculation,
   data: TaxData,
 ): ScenarioResult {
   const { drivingProfile, salary, energy } = inputs;
-  const { vehicle, businessLease } = scenario;
+  const { vehicle } = car;
+  const { businessLease } = calc;
 
   // Annual gross bijtelling
   const grossBijtellingAnnual = calculateBijtelling(
@@ -101,8 +103,10 @@ export function evaluateBusinessLease(
   }
 
   return {
-    id: scenario.id,
-    label: scenario.label,
+    id: calc.id,
+    label: calc.label,
+    carId: car.id,
+    carLabel: car.label,
     kind: "businessLease",
     grossMonthly,
     netMonthly,
