@@ -9,6 +9,7 @@
     sweep,
     variableScope,
   } from "../domain/sensitivity";
+  import { getTaxData } from "../domain/taxData";
 
   let { inputs }: { inputs: AppInputs } = $props();
 
@@ -74,6 +75,28 @@
     const variableLabel = VARIABLES.find((v) => v.key === variable)?.label ?? variable;
     const labels = Array.from(new Set(flat.map((f) => f.scenario)));
 
+    // When sweeping bruto salary, overlay the income-tax bracket boundaries.
+    // These cause the marginal tax rate (and therefore business-lease net cost)
+    // to step up — what appears as a "bump" in the curve is the boundary
+    // between brackets 2 and 3 (37.56 % → 49.5 % in 2026).
+    const xMin = Math.min(...flat.map((f) => f.x));
+    const xMax = Math.max(...flat.map((f) => f.x));
+    const annotations: { x: number; label: string }[] = [];
+    if (variable === "bruto") {
+      const taxData = getTaxData(inputs.taxYear);
+      for (let i = 0; i < taxData.incomeTax.brackets.length - 1; i++) {
+        const upper = taxData.incomeTax.brackets[i].upTo;
+        const nextRate = taxData.incomeTax.brackets[i + 1].rate;
+        if (upper === null || upper < xMin || upper > xMax) continue;
+        annotations.push({
+          x: upper,
+          label: `bracket → ${(nextRate * 100).toFixed(2)}%`,
+        });
+      }
+    }
+
+    const yMax = Math.max(...flat.map((p) => p.net));
+
     const chart = Plot.plot({
       width: chartEl.clientWidth || 720,
       height: 380,
@@ -98,12 +121,25 @@
           strokeWidth: 2,
           curve: "monotone-x",
         }),
+        Plot.ruleX(
+          annotations.map((a) => a.x),
+          { stroke: "#d29922", strokeDasharray: "2 4", strokeOpacity: 0.7 },
+        ),
+        Plot.text(annotations, {
+          x: "x",
+          y: () => yMax,
+          text: "label",
+          textAnchor: "start",
+          dx: 4,
+          dy: 12,
+          fill: "#d29922",
+        }),
         Plot.ruleX([current], { stroke: "#8b949e", strokeDasharray: "4 4" }),
         Plot.text(
           [{ x: current, label: "current" }],
           {
             x: "x",
-            y: () => Math.max(...flat.map((p) => p.net)),
+            y: () => yMax,
             text: "label",
             textAnchor: "start",
             dx: 6,

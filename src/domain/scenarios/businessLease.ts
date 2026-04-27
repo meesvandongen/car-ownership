@@ -27,12 +27,19 @@ export function evaluateBusinessLease(
     data,
   );
 
-  // Eigen bijdrage reduces bijtelling 1:1 (capped at gross bijtelling).
-  const eigenBijdrageAnnual = Math.min(
-    businessLease.eigenBijdrage * 12,
+  // Eigen bijdrage reduces bijtelling 1:1, but only up to the bijtelling itself
+  // (you can never have negative bijtelling). The employee, however, still pays
+  // the full eigen bijdrage from net salary regardless — any excess above the
+  // gross bijtelling just doesn't reduce tax further, but is not refunded.
+  const eigenBijdrageAnnual = businessLease.eigenBijdrage * 12;
+  const eigenBijdrageReducingBijtelling = Math.min(
+    eigenBijdrageAnnual,
     grossBijtellingAnnual,
   );
-  const taxableBijtelling = Math.max(0, grossBijtellingAnnual - eigenBijdrageAnnual);
+  const taxableBijtelling = Math.max(
+    0,
+    grossBijtellingAnnual - eigenBijdrageReducingBijtelling,
+  );
 
   // Salary sacrifice / cafetariaregeling: the employer reduces gross salary
   // (cannot exceed the actual bruto) in exchange for the lease car. This both

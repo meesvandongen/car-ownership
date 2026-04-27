@@ -93,6 +93,7 @@
     grid-template-columns: minmax(320px, 380px) 1fr;
     gap: 16px;
     padding: 16px 28px 28px;
+    align-items: start;
   }
   .inputs {
     display: flex;
@@ -105,6 +106,12 @@
     flex-direction: column;
     gap: 16px;
     min-width: 0;
+    position: sticky;
+    top: 12px;
+    max-height: calc(100vh - 24px);
+    overflow-y: auto;
+    /* Pad the inner edge so the scrollbar doesn't crowd the cards. */
+    padding-right: 4px;
   }
   footer {
     padding: 12px 28px 28px;
@@ -115,6 +122,13 @@
   @media (max-width: 980px) {
     main {
       grid-template-columns: 1fr;
+    }
+    /* Single-column layout: stickiness would trap the inputs above the results. */
+    .results {
+      position: static;
+      max-height: none;
+      overflow-y: visible;
+      padding-right: 0;
     }
   }
 </style>

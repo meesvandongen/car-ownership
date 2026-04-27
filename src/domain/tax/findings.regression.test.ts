@@ -340,9 +340,10 @@ describe("tax calculation — regression tests for explorer findings", () => {
       const eigenLine = r.breakdown.find((b) => b.label === "Eigen bijdrage")!;
       expect(bijLine.monthly).toBeGreaterThanOrEqual(0);
       expect(bijLine.monthly).toBe(0);
-      // Eigen bijdrage line is capped at gross bijtelling annualised / 12.
-      const grossAnnual = 30_000 * 0.22;
-      expect(eigenLine.monthly * 12).toBeCloseTo(grossAnnual, 2);
+      // Eigen bijdrage line reflects what the employee actually pays from net
+      // salary — that is the full input amount. Excess above gross bijtelling
+      // simply doesn't reduce tax further, but the employee is still out-of-pocket.
+      expect(eigenLine.monthly).toBe(100_000);
     });
 
     it("eigen bijdrage exactly equal to gross bijtelling reduces taxable bijtelling to 0", () => {

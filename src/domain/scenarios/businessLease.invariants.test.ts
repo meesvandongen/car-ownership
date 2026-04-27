@@ -110,12 +110,15 @@ describe("businessLease — property-based invariants", () => {
     );
   });
 
-  it("eigen bijdrage line item never exceeds the gross bijtelling (1:1 cap)", () => {
+  it("eigen bijdrage line item equals the user's monthly contribution from net salary", () => {
     fc.assert(
       fc.property(arbBundle(), ({ inputs, car, calc }) => {
         const r = evaluateBusinessLease(inputs, car, calc, data);
         const eigenLine = r.breakdown.find((b) => b.label === "Eigen bijdrage")!;
-        return eigenLine.monthly <= calc.businessLease.eigenBijdrage + 1e-6;
+        // The line item reflects what the employee actually pays from net salary.
+        // The 1:1 cap with gross bijtelling only governs how much tax is saved,
+        // not the user's out-of-pocket cost.
+        return Math.abs(eigenLine.monthly - calc.businessLease.eigenBijdrage) < 1e-6;
       }),
       { numRuns: 1000 },
     );
