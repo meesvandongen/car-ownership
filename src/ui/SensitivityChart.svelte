@@ -75,10 +75,11 @@
     const variableLabel = VARIABLES.find((v) => v.key === variable)?.label ?? variable;
     const labels = Array.from(new Set(flat.map((f) => f.scenario)));
 
-    // When sweeping bruto salary, overlay the income-tax bracket boundaries.
-    // These cause the marginal tax rate (and therefore business-lease net cost)
-    // to step up — what appears as a "bump" in the curve is the boundary
-    // between brackets 2 and 3 (37.56 % → 49.5 % in 2026).
+    // When sweeping bruto salary, overlay the major income-tax boundaries.
+    // Each one introduces a kink in the marginal-rate curve, and combinations
+    // can create surprising humps (e.g. a salary-sacrifice slice that
+    // straddles the algemene-heffingskorting cliff temporarily loses some of
+    // its tax saving as bruto rises through the cliff zone).
     const xMin = Math.min(...flat.map((f) => f.x));
     const xMax = Math.max(...flat.map((f) => f.x));
     const annotations: { x: number; label: string }[] = [];
@@ -87,15 +88,26 @@
       for (let i = 0; i < taxData.incomeTax.brackets.length - 1; i++) {
         const upper = taxData.incomeTax.brackets[i].upTo;
         const nextRate = taxData.incomeTax.brackets[i + 1].rate;
-        if (upper === null || upper < xMin || upper > xMax) continue;
+        if (upper === null) continue;
         annotations.push({
           x: upper,
           label: `bracket → ${(nextRate * 100).toFixed(2)}%`,
         });
       }
+      const ahk = taxData.incomeTax.algemeneHeffingskorting;
+      annotations.push({ x: ahk.phaseOutStart, label: "AHK phase-out start" });
+      annotations.push({ x: ahk.phaseOutEnd, label: "AHK = 0" });
+      const ak = taxData.incomeTax.arbeidskorting;
+      annotations.push({ x: ak.phaseOutStart, label: "AK phase-out start" });
+      annotations.push({ x: ak.phaseOutEnd, label: "AK = 0" });
     }
-
     const yMax = Math.max(...flat.map((p) => p.net));
+    const yMin = Math.min(...flat.map((p) => p.net));
+    const ySpan = Math.max(yMax - yMin, 1);
+    const visibleAnnotations = annotations
+      .filter((a) => a.x >= xMin && a.x <= xMax)
+      // Stagger labels vertically so adjacent boundaries don't overlap.
+      .map((a, i) => ({ ...a, y: yMax - (i % 3) * ySpan * 0.04 }));
 
     const chart = Plot.plot({
       width: chartEl.clientWidth || 720,
@@ -122,17 +134,17 @@
           curve: "monotone-x",
         }),
         Plot.ruleX(
-          annotations.map((a) => a.x),
-          { stroke: "#d29922", strokeDasharray: "2 4", strokeOpacity: 0.7 },
+          visibleAnnotations.map((a) => a.x),
+          { stroke: "#d29922", strokeDasharray: "2 4", strokeOpacity: 0.6 },
         ),
-        Plot.text(annotations, {
+        Plot.text(visibleAnnotations, {
           x: "x",
-          y: () => yMax,
+          y: "y",
           text: "label",
           textAnchor: "start",
           dx: 4,
-          dy: 12,
           fill: "#d29922",
+          fontSize: 10,
         }),
         Plot.ruleX([current], { stroke: "#8b949e", strokeDasharray: "4 4" }),
         Plot.text(
