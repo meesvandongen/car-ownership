@@ -64,13 +64,13 @@ describe("compareAll", () => {
     );
   });
 
-  it("doubling annual km significantly increases ownership net cost", () => {
+  it("doubling private km increases ownership net cost (more fuel, no extra reimbursement)", () => {
     const base = compareAll(DEFAULTS);
     const more = compareAll({
       ...DEFAULTS,
       drivingProfile: {
         ...DEFAULTS.drivingProfile,
-        annualKm: DEFAULTS.drivingProfile.annualKm * 2,
+        privateKm: DEFAULTS.drivingProfile.privateKm * 2,
       },
     });
     expect(byKind(more, "ownership").netMonthly).toBeGreaterThan(
@@ -224,8 +224,8 @@ describe("compareAll", () => {
 
 describe("sensitivity sweep", () => {
   it("returns one comparison per range value (shared variable affects all)", () => {
-    const range = suggestRange(DEFAULTS, "annualKm", 11);
-    const points = sweep(DEFAULTS, "annualKm", range);
+    const range = suggestRange(DEFAULTS, "privateKm", 11);
+    const points = sweep(DEFAULTS, "privateKm", range);
     expect(points).toHaveLength(11);
     for (const p of points) {
       for (const s of p.result.results) {

@@ -1,4 +1,5 @@
 import type { AppInputs, Calculation, Car, ScenarioResult } from "../types";
+import { totalAnnualKm } from "../types";
 import type { TaxData } from "../taxData";
 import { calculateBijtelling } from "../tax/bijtelling";
 import { computeIncomeTax, marginalNetCost } from "../tax/incomeTax";
@@ -27,11 +28,22 @@ export function evaluateBusinessLease(
     data,
   );
 
+  // The employee can pay the employer back for the calculated fuel cost. This
+  // is the only realistic way to make the employee bear (part of) the fuel —
+  // a tankpas can't be split by trip purpose, and direct payments to a third
+  // party (gas station) aren't aftrekbaar as eigen bijdrage. So we treat
+  // employer-billed fuel exactly like a cash eigen bijdrage: paid from net,
+  // reduces taxable bijtelling 1:1.
+  const fuelReimbursementAnnual = businessLease.fuelPaidByEmployee
+    ? annualFuelCost(vehicle, drivingProfile, energy)
+    : 0;
+
   // Eigen bijdrage reduces bijtelling 1:1, but only up to the bijtelling itself
   // (you can never have negative bijtelling). The employee, however, still pays
   // the full eigen bijdrage from net salary regardless — any excess above the
   // gross bijtelling just doesn't reduce tax further, but is not refunded.
-  const eigenBijdrageAnnual = businessLease.eigenBijdrage * 12;
+  const eigenBijdrageAnnual =
+    businessLease.eigenBijdrage * 12 + fuelReimbursementAnnual;
   const eigenBijdrageReducingBijtelling = Math.min(
     eigenBijdrageAnnual,
     grossBijtellingAnnual,
@@ -59,30 +71,21 @@ export function evaluateBusinessLease(
   // computed on top of the (possibly reduced) effective bruto.
   const annualBijtellingNetCost = marginalNetCost(effectiveBruto, taxableBijtelling, data);
 
-  // Fuel: if no fuel card or private fuel not covered, employee pays for private km.
-  let fuelAnnual = 0;
-  if (!businessLease.fuelCardPrivate) {
-    const privateFraction =
-      drivingProfile.annualKm > 0
-        ? drivingProfile.privateKm / drivingProfile.annualKm
-        : 0;
-    fuelAnnual = annualFuelCost(vehicle, drivingProfile, energy) * privateFraction;
-  }
-
   const monthlyBijtellingNet = annualBijtellingNetCost / 12;
-  const monthlyEigenBijdrage = eigenBijdrageAnnual / 12;
-  const monthlyFuel = fuelAnnual / 12;
+  const monthlyEigenBijdrage = businessLease.eigenBijdrage;
+  const monthlyFuelReimbursement = fuelReimbursementAnnual / 12;
   const monthlySalarySacrificeNet = annualSalarySacrificeNetCost / 12;
 
   // From the user's perspective, the user pays:
   //   • net bijtelling cost (extra tax on the bijtelling addition)
   //   • eigen bijdrage (paid from net salary)
-  //   • private fuel (if applicable)
+  //   • fuel reimbursement to employer (paid from net salary, behaves as
+  //     additional eigen bijdrage for tax purposes)
   //   • net cost of any salary sacrificed (gross given up minus tax saved)
   const grossMonthly =
     monthlyEigenBijdrage +
+    monthlyFuelReimbursement +
     monthlyBijtellingNet +
-    monthlyFuel +
     monthlySalarySacrificeNet;
   const netMonthly = grossMonthly;
 
@@ -119,13 +122,13 @@ export function evaluateBusinessLease(
     netMonthly,
     totalCost: netMonthly * inputs.comparisonMonths,
     costPerKm:
-      drivingProfile.annualKm > 0
-        ? (netMonthly * 12) / drivingProfile.annualKm
+      totalAnnualKm(drivingProfile) > 0
+        ? (netMonthly * 12) / totalAnnualKm(drivingProfile)
         : 0,
     breakdown: [
       { label: "Bijtelling (net tax cost)", monthly: monthlyBijtellingNet },
       { label: "Eigen bijdrage", monthly: monthlyEigenBijdrage },
-      { label: "Private fuel", monthly: monthlyFuel },
+      { label: "Fuel reimbursed to employer", monthly: monthlyFuelReimbursement },
       { label: "Salary sacrifice (net cost)", monthly: monthlySalarySacrificeNet },
     ],
     warnings,

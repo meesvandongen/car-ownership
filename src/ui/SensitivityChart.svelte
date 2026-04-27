@@ -14,7 +14,8 @@
   let { inputs }: { inputs: AppInputs } = $props();
 
   const VARIABLES: { key: SweepableNumeric; label: string }[] = [
-    { key: "annualKm", label: "Annual mileage (km)" },
+    { key: "businessKm", label: "Zakelijke km/yr (incl. woon-werk)" },
+    { key: "privateKm", label: "Privé km/yr" },
     { key: "bruto", label: "Bruto salary (€)" },
     { key: "electricityCostPerKwh", label: "Electricity (€/kWh)" },
     { key: "fuelCostPerLiter", label: "Fuel (€/L)" },
@@ -30,7 +31,7 @@
     { key: "salarySacrificeMonthly", label: "Salary sacrifice (€/mo) — per calc" },
   ];
 
-  let variable = $state<SweepableNumeric>("annualKm");
+  let variable = $state<SweepableNumeric>("privateKm");
   let carId = $state<string>("");
   let calcId = $state<string>("");
   let chartEl: HTMLDivElement;

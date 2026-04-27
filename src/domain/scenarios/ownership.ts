@@ -1,4 +1,5 @@
 import type { AppInputs, Calculation, Car, ScenarioResult } from "../types";
+import { totalAnnualKm } from "../types";
 import type { TaxData } from "../taxData";
 import { calculateAnnualMrb } from "../tax/mrb";
 import { calculateBpm } from "../tax/bpm";
@@ -107,8 +108,8 @@ export function evaluateOwnership(
     netMonthly,
     totalCost: netMonthly * inputs.comparisonMonths,
     costPerKm:
-      drivingProfile.annualKm > 0
-        ? (netMonthly * 12) / drivingProfile.annualKm
+      totalAnnualKm(drivingProfile) > 0
+        ? (netMonthly * 12) / totalAnnualKm(drivingProfile)
         : 0,
     breakdown: [
       { label: "Depreciation", monthly: monthlyDepreciation },

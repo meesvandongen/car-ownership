@@ -42,7 +42,7 @@ export const DEFAULT_PRIVATE_LEASE: PrivateLeaseInputs = {
 export const DEFAULT_BUSINESS_LEASE: BusinessLeaseInputs = {
   monthlyLeaseTariff: 750,
   eigenBijdrage: 0,
-  fuelCardPrivate: true,
+  fuelPaidByEmployee: false,
   role: "employee",
   rittenregistratie: false,
   salarySacrificeMonthly: 0,
@@ -94,9 +94,8 @@ export const DEFAULTS: AppInputs = {
   taxYear: 2026,
   drivingProfile: {
     province: "Overijssel",
-    annualKm: 18_000,
-    businessKm: 6_000,
-    commuteKm: 8_000,
+    // 6_000 zakelijk + 8_000 woon-werk under the previous split.
+    businessKm: 14_000,
     privateKm: 4_000,
   },
   salary: {

@@ -151,19 +151,11 @@
       </select>
     </label>
     <label>
-      Annual km — total
-      <input type="number" bind:value={inputs.drivingProfile.annualKm} min="0" step="500" />
-    </label>
-    <label>
-      Annual km — business
+      Annual km — zakelijk (incl. woon-werk)
       <input type="number" bind:value={inputs.drivingProfile.businessKm} min="0" step="500" />
     </label>
     <label>
-      Annual km — commute
-      <input type="number" bind:value={inputs.drivingProfile.commuteKm} min="0" step="500" />
-    </label>
-    <label>
-      Annual km — private
+      Annual km — privé
       <input type="number" bind:value={inputs.drivingProfile.privateKm} min="0" step="500" />
     </label>
   </div>
@@ -459,8 +451,8 @@
             </select>
           </label>
           <label class="row" style="align-items: center;">
-            <input type="checkbox" bind:checked={activeCalc.businessLease.fuelCardPrivate} style="width:auto;" />
-            <span>Fuel card covers private km</span>
+            <input type="checkbox" bind:checked={activeCalc.businessLease.fuelPaidByEmployee} style="width:auto;" />
+            <span title="Employer bills fuel back; reduces taxable bijtelling 1:1">Employee reimburses fuel to employer</span>
           </label>
           <label class="row" style="align-items: center;">
             <input type="checkbox" bind:checked={activeCalc.businessLease.rittenregistratie} style="width:auto;" />

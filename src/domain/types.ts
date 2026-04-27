@@ -74,7 +74,13 @@ export interface PrivateLeaseInputs {
 export interface BusinessLeaseInputs {
   monthlyLeaseTariff: number;
   eigenBijdrage: number;
-  fuelCardPrivate: boolean;
+  // When true, the employer bills the employee back for the calculated annual
+  // fuel cost. Mechanically this is an eigen bijdrage (vergoeding aan de
+  // werkgever) on top of `eigenBijdrage`: it reduces the taxable bijtelling
+  // base 1:1 and is paid out of net salary. Splitting fuel by km purpose isn't
+  // realistic for a tankpas — the only legitimate way to make the employee
+  // bear (part of) the fuel cost is via an employer reimbursement.
+  fuelPaidByEmployee: boolean;
   role: Role;
   rittenregistratie: boolean;
   // "Cafetariaregeling" / bruto-netto uitruil: employer reduces gross salary
@@ -89,10 +95,16 @@ export interface ReimbursementInputs {
 
 export interface DrivingProfile {
   province: Province;
-  annualKm: number;
+  // Zakelijke kilometers — includes woon-werkverkeer. Both qualify for the
+  // €0,23/km gerichte vrijstelling, and woon-werkverkeer is treated as
+  // zakelijk for the bijtelling 500-km test, so a single field covers both
+  // and avoids the redundant total-vs-sum bookkeeping.
   businessKm: number;
-  commuteKm: number;
   privateKm: number;
+}
+
+export function totalAnnualKm(driving: DrivingProfile): number {
+  return driving.businessKm + driving.privateKm;
 }
 
 export interface EnergyPrices {
