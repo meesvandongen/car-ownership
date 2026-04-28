@@ -27,7 +27,7 @@ const arbBundle = (): fc.Arbitrary<Bundle> =>
       privateFraction: fc.double({ min: 0, max: 1, noNaN: true }),
       bruto: fc.double({ min: 15_000, max: 250_000, noNaN: true }),
       eigenBijdrageMonthly: fc.double({ min: 0, max: 5_000, noNaN: true }),
-      fuelCardPrivate: fc.boolean(),
+      fuelPaidByEmployee: fc.boolean(),
       rittenregistratie: fc.boolean(),
       salarySacrificeMonthly: fc.double({ min: 0, max: 3_000, noNaN: true }),
       taxYear: fc.integer({ min: 2026, max: 2030 }),
@@ -46,7 +46,7 @@ const arbBundle = (): fc.Arbitrary<Bundle> =>
       calc.businessLease = {
         ...calc.businessLease,
         eigenBijdrage: p.eigenBijdrageMonthly,
-        fuelCardPrivate: p.fuelCardPrivate,
+        fuelPaidByEmployee: p.fuelPaidByEmployee,
         rittenregistratie: p.rittenregistratie,
         salarySacrificeMonthly: p.salarySacrificeMonthly,
       };
@@ -56,10 +56,8 @@ const arbBundle = (): fc.Arbitrary<Bundle> =>
         drivingProfile: {
           ...DEFAULTS.drivingProfile,
           province: p.province,
-          annualKm: p.annualKm,
           privateKm: p.annualKm * p.privateFraction,
-          businessKm: p.annualKm * (1 - p.privateFraction) * 0.5,
-          commuteKm: p.annualKm * (1 - p.privateFraction) * 0.5,
+          businessKm: p.annualKm * (1 - p.privateFraction),
         },
         salary: { ...DEFAULTS.salary, bruto: p.bruto },
         cars: [car],

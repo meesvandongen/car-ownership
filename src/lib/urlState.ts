@@ -4,9 +4,7 @@ import { newId } from "../defaults";
 const SHARED_KEYS: { path: string[]; key: string }[] = [
   { path: ["taxYear"], key: "ty" },
   { path: ["drivingProfile", "province"], key: "prov" },
-  { path: ["drivingProfile", "annualKm"], key: "km" },
   { path: ["drivingProfile", "businessKm"], key: "bkm" },
-  { path: ["drivingProfile", "commuteKm"], key: "ckm" },
   { path: ["drivingProfile", "privateKm"], key: "pkm" },
   { path: ["salary", "bruto"], key: "bruto" },
   { path: ["salary", "aowAge"], key: "aow" },

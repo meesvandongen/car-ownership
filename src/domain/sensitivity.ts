@@ -2,7 +2,8 @@ import type { AppInputs, CompareResult } from "./types";
 import { compareAll } from "./compare";
 
 export type SharedSweepable =
-  | "annualKm"
+  | "businessKm"
+  | "privateKm"
   | "bruto"
   | "electricityCostPerKwh"
   | "fuelCostPerLiter"
@@ -27,7 +28,8 @@ export type SweepableNumeric =
   | CalculationSweepable;
 
 export const SHARED_SWEEPABLES: SharedSweepable[] = [
-  "annualKm",
+  "businessKm",
+  "privateKm",
   "bruto",
   "electricityCostPerKwh",
   "fuelCostPerLiter",
@@ -73,10 +75,15 @@ function withSharedVariable(
   value: number,
 ): AppInputs {
   switch (variable) {
-    case "annualKm":
+    case "businessKm":
       return {
         ...inputs,
-        drivingProfile: { ...inputs.drivingProfile, annualKm: value },
+        drivingProfile: { ...inputs.drivingProfile, businessKm: value },
+      };
+    case "privateKm":
+      return {
+        ...inputs,
+        drivingProfile: { ...inputs.drivingProfile, privateKm: value },
       };
     case "bruto":
       return { ...inputs, salary: { ...inputs.salary, bruto: value } };
@@ -155,8 +162,10 @@ export function getCurrentValue(
   const s = variableScope(variable);
   if (s === "shared") {
     switch (variable as SharedSweepable) {
-      case "annualKm":
-        return inputs.drivingProfile.annualKm;
+      case "businessKm":
+        return inputs.drivingProfile.businessKm;
+      case "privateKm":
+        return inputs.drivingProfile.privateKm;
       case "bruto":
         return inputs.salary.bruto;
       case "electricityCostPerKwh":
