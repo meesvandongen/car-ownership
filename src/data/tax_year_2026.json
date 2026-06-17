@@ -60,8 +60,8 @@
       { "upTo": 3000, "quarterly": 426.91 }
     ],
     "powertrainMultipliers": {
-      "ev": 0.70,
-      "hydrogen": 0.70,
+      "ev": 1.00,
+      "hydrogen": 1.00,
       "phev": 1.00,
       "petrol": 1.00,
       "diesel": 1.30,
@@ -76,18 +76,18 @@
     }
   },
   "provinces": {
-    "Drenthe": 0.92,
-    "Flevoland": 0.84,
-    "Friesland": 0.92,
-    "Gelderland": 1.01,
-    "Groningen": 1.05,
-    "Limburg": 0.93,
-    "Noord-Brabant": 0.81,
-    "Noord-Holland": 0.78,
-    "Overijssel": 0.85,
-    "Utrecht": 0.86,
-    "Zeeland": 0.94,
-    "Zuid-Holland": 1.02
+    "Drenthe": 0.920,
+    "Flevoland": 0.847,
+    "Friesland": 0.921,
+    "Gelderland": 0.983,
+    "Groningen": 0.957,
+    "Limburg": 0.885,
+    "Noord-Brabant": 0.870,
+    "Noord-Holland": 0.821,
+    "Overijssel": 0.822,
+    "Utrecht": 0.864,
+    "Zeeland": 0.844,
+    "Zuid-Holland": 1.044
   },
   "bpm": {
     "evFixed": 685,

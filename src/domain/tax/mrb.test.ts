@@ -14,8 +14,9 @@ describe("MRB 2026", () => {
       { weightKg: 1850, powertrain: "petrol", province: "Overijssel", taxYear: 2026 },
       data,
     );
-    // EV pays 70% × (1 − 0.30) = 49% of the petrol equivalent.
-    expect(ev / petrol).toBeCloseTo(0.7 * 0.7, 5);
+    // EV pays the same base rate as petrol, reduced only by the art. 23b
+    // korting: (1 − 0.30) = 70% of the petrol equivalent in 2026.
+    expect(ev / petrol).toBeCloseTo(0.7, 5);
   });
 
   it("higher opcenten province yields higher MRB", () => {

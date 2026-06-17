@@ -208,10 +208,10 @@ describe("tax calculation — regression tests for explorer findings", () => {
 
   describe("MRB — weight-tier cliffs", () => {
     // Tier boundary 2500→2501 jumps from the 2500-tier (340.56/q) to the
-    // 3000-tier (426.91/q): (426.91 − 340.56) × (1+0.85) × 4 = €638.99 (petrol).
-    const boundaryJump = (426.91 - 340.56) * 1.85 * 4;
+    // 3000-tier (426.91/q): (426.91 − 340.56) × (1+0.822) × 4 = €629.50 (petrol).
+    const boundaryJump = (426.91 - 340.56) * 1.822 * 4;
 
-    it("petrol/Overijssel: MRB jumps €638.99 over the 2500→2501 kg tier boundary", () => {
+    it("petrol/Overijssel: MRB jumps €629.50 over the 2500→2501 kg tier boundary", () => {
       const at2500 = calculateAnnualMrb(
         { weightKg: 2500, powertrain: "petrol", province: "Overijssel", taxYear: 2026 },
         data,
@@ -247,7 +247,7 @@ describe("tax calculation — regression tests for explorer findings", () => {
       expect(at2501 - at2500).toBeCloseTo(boundaryJump * 1.4, 1);
     });
 
-    it("EV/Overijssel: same boundary, jump scales with 0.70 multiplier × 0.70 (1−korting)", () => {
+    it("EV/Overijssel: same boundary, jump scales with 0.70 (1−korting) in 2026", () => {
       const at2500 = calculateAnnualMrb(
         { weightKg: 2500, powertrain: "ev", province: "Overijssel", taxYear: 2026 },
         data,
@@ -256,7 +256,7 @@ describe("tax calculation — regression tests for explorer findings", () => {
         { weightKg: 2501, powertrain: "ev", province: "Overijssel", taxYear: 2026 },
         data,
       );
-      expect(at2501 - at2500).toBeCloseTo(boundaryJump * 0.7 * 0.7, 1);
+      expect(at2501 - at2500).toBeCloseTo(boundaryJump * 0.7, 1);
     });
 
     it("weights above the highest tier (3000 kg) clamp to the last tier", () => {

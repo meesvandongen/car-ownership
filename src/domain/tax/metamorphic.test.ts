@@ -190,7 +190,7 @@ describe("MRB — metamorphic relations", () => {
     );
   });
 
-  it("MRB(EV at year Y) / MRB(petrol same vehicle) = 0.70 × (1 − korting[Y])", () => {
+  it("MRB(EV at year Y) / MRB(petrol same vehicle) = (1 − korting[Y]) (art. 23b)", () => {
     fc.assert(
       fc.property(
         fc.double({ min: 100, max: 3000, noNaN: true }),
@@ -206,7 +206,7 @@ describe("MRB — metamorphic relations", () => {
             data,
           );
           const korting = data.mrb.evKortingByYear[String(year)] ?? 0;
-          const expected = 0.7 * (1 - korting);
+          const expected = 1 - korting;
           return Math.abs(ev / petrol - expected) < 1e-9;
         },
       ),
