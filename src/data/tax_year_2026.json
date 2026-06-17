@@ -66,6 +66,23 @@
       ]
     },
     "dieselFijnstofToeslag": 0.19,
+    "opcentenHoofdsom": {
+      "bands": [
+        { "maxKg": 550, "amount": 57.99 },
+        { "maxKg": 650, "amount": 69.34 },
+        { "maxKg": 750, "amount": 81.59 },
+        { "maxKg": 850, "amount": 107.91 },
+        { "maxKg": 950, "amount": 136.50 },
+        { "maxKg": 1050, "amount": 183.24 },
+        { "maxKg": 1150, "amount": 229.98 },
+        { "maxKg": 1250, "amount": 276.72 },
+        { "maxKg": 1350, "amount": 323.45 },
+        { "maxKg": 1450, "amount": 370.19 },
+        { "maxKg": 1550, "amount": 416.93 },
+        { "maxKg": 1650, "amount": 463.67 }
+      ],
+      "above": { "thresholdKg": 1650, "base": 463.67, "per100Above": 46.74 }
+    },
     "evKortingByYear": {
       "2026": 0.30,
       "2027": 0.30,

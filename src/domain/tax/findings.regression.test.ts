@@ -209,34 +209,38 @@ describe("tax calculation — regression tests for explorer findings", () => {
   describe("MRB — uniform per-100kg steps (no tier cliffs)", () => {
     // The old hand-maintained weight table had coarse tiers (…2300, 2500, 3000)
     // that produced large cliffs. The art. 23 schedule is a flat €17.27/100 kg
-    // above 900 kg, so crossing any 100 kg boundary is a single uniform step —
-    // no oversized jumps. Weight rounds up, so 2501 kg is taxed as 2600 kg.
-    const petrolStep = 17.27 * 1.822 * 4; // ≈ €125.90 (rijksdeel × opcenten × 4)
+    // (rijksdeel) plus the 1995 hoofdsom's flat €46.74/100 kg for the opcenten,
+    // so crossing any 100 kg boundary is a single uniform step — no oversized
+    // jumps. Note the rijksdeel and the 1995 hoofdsom step at slightly offset
+    // weights (the hoofdsom bands run xx51–xx50), so the uniform step is only
+    // seen over an aligned 100 kg window — measured here 2500 → 2600 kg.
+    // petrolStep = rijksdeel step ×4 + opcenten% × hoofdsom step (annual).
+    const petrolStep = 17.27 * 4 + 0.822 * 46.74; // ≈ €107.50/yr per 100 kg
 
-    it("petrol/Overijssel: 2500→2501 kg is one €17.27/100kg step", () => {
+    it("petrol/Overijssel: 2500→2600 kg is one uniform step (no oversized cliff)", () => {
       const at2500 = calculateAnnualMrb(
         { weightKg: 2500, powertrain: "petrol", province: "Overijssel", taxYear: 2026 },
         data,
       );
-      const at2501 = calculateAnnualMrb(
-        { weightKg: 2501, powertrain: "petrol", province: "Overijssel", taxYear: 2026 },
+      const at2600 = calculateAnnualMrb(
+        { weightKg: 2600, powertrain: "petrol", province: "Overijssel", taxYear: 2026 },
         data,
       );
-      expect(at2501 - at2500).toBeCloseTo(petrolStep, 1);
+      expect(at2600 - at2500).toBeCloseTo(petrolStep, 1);
     });
 
     it("diesel/Overijssel: the step also includes the €16.57/100kg dieseltoeslag", () => {
-      // Diesel step = rijksdeel step (with opcenten) + dieseltoeslag step (no opcenten).
-      const dieselStep = (17.27 * 1.822 + 16.57) * 4;
+      // Diesel step = petrol step + dieseltoeslag step ×4 (toeslag is opcenten-free).
+      const dieselStep = petrolStep + 16.57 * 4;
       const at2500 = calculateAnnualMrb(
         { weightKg: 2500, powertrain: "diesel", province: "Overijssel", taxYear: 2026 },
         data,
       );
-      const at2501 = calculateAnnualMrb(
-        { weightKg: 2501, powertrain: "diesel", province: "Overijssel", taxYear: 2026 },
+      const at2600 = calculateAnnualMrb(
+        { weightKg: 2600, powertrain: "diesel", province: "Overijssel", taxYear: 2026 },
         data,
       );
-      expect(at2501 - at2500).toBeCloseTo(dieselStep, 1);
+      expect(at2600 - at2500).toBeCloseTo(dieselStep, 1);
     });
 
     it("every 100kg boundary up to 3000 kg is the same petrol step (no cliffs)", () => {

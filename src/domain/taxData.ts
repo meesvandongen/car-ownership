@@ -57,6 +57,16 @@ export interface TaxData {
     // whose fijnstof (PM) emission exceeds the limit — older diesels without a
     // particulate filter. Stored as a fraction (0.19 = 19%).
     dieselFijnstofToeslag: number;
+    // Provinciale opcenten is NOT levied on the current rijksdeel, but on the
+    // frozen "hoofdsom" — the MRB base as it stood on 1 April 1995 (Provinciewet
+    // art. 222). This is the ANNUAL hoofdsom by weight class. The opcenten is
+    // `opcenten% × hoofdsom` per year, fuel-independent.
+    opcentenHoofdsom: {
+      // Bands by upper weight bound (inclusive), ascending.
+      bands: { maxKg: number; amount: number }[];
+      // Above `thresholdKg`: amount = base + ⌈(weight − thresholdKg)/100⌉ × per100Above.
+      above: { thresholdKg: number; base: number; per100Above: number };
+    };
     evKortingByYear: Record<string, number>;
   };
   provinces: Record<string, number>;

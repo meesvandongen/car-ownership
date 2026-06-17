@@ -132,39 +132,26 @@ describe("BPM — metamorphic relations", () => {
 });
 
 describe("MRB — metamorphic relations", () => {
-  it("ratio MRB(any province A) / MRB(province B) is independent of weight (multiplicative)", () => {
-    // For powertrains without a brandstoftoeslag the opcenten is the only
-    // province-dependent term and enters multiplicatively, so the ratio between
-    // two provinces is the same at any weight. (Diesel/LPG break this because
-    // their additive toeslag is opcenten-free — covered by the test below.)
+  it("province difference MRB(A) − MRB(B) is additive (opcenten × hoofdsom) and fuel-independent", () => {
+    // Opcenten is opcenten% × the frozen 1995 hoofdsom — a fuel-independent
+    // additive term. So at a fixed weight the gap between two provinces is the
+    // same for petrol, diesel and LPG (the rijksdeel and brandstoftoeslag cancel).
     fc.assert(
       fc.property(
-        fc.constantFrom<Powertrain>("petrol", "ev", "phev", "hydrogen"),
         fc.constantFrom(...provinces),
         fc.constantFrom(...provinces),
         fc.double({ min: 100, max: 3000, noNaN: true }),
-        fc.double({ min: 100, max: 3000, noNaN: true }),
-        (powertrain, pA, pB, w1, w2) => {
-          if (data.provinces[pB] + 1 < 1e-6) return true;
-          const r1 =
-            calculateAnnualMrb(
-              { weightKg: w1, powertrain, province: pA, taxYear: 2026 },
-              data,
-            ) /
-            calculateAnnualMrb(
-              { weightKg: w1, powertrain, province: pB, taxYear: 2026 },
-              data,
-            );
-          const r2 =
-            calculateAnnualMrb(
-              { weightKg: w2, powertrain, province: pA, taxYear: 2026 },
-              data,
-            ) /
-            calculateAnnualMrb(
-              { weightKg: w2, powertrain, province: pB, taxYear: 2026 },
-              data,
-            );
-          return Math.abs(r1 - r2) < 1e-9;
+        (pA, pB, w) => {
+          const delta = (powertrain: Powertrain) =>
+            calculateAnnualMrb({ weightKg: w, powertrain, province: pA, taxYear: 2026 }, data) -
+            calculateAnnualMrb({ weightKg: w, powertrain, province: pB, taxYear: 2026 }, data);
+          const petrolDelta = delta("petrol");
+          // Same province gap regardless of fuel (korting-free powertrains).
+          return (
+            Math.abs(petrolDelta - delta("diesel")) < 1e-9 &&
+            Math.abs(petrolDelta - delta("lpg")) < 1e-9 &&
+            Math.abs(petrolDelta - delta("phev")) < 1e-9
+          );
         },
       ),
       { numRuns: 500 },
