@@ -12,7 +12,9 @@ export interface MrbInputs {
  * Annual MRB (motorrijtuigenbelasting) including provinciale opcenten.
  *
  * Computation:
- *   quarterly base × powertrain multiplier × (1 + opcenten %) × 4
+ *   quarterly rijksdeel × powertrain multiplier × (1 + opcenten %) × 4
+ * The quarterly base is the rijksdeel (national part) per the Wet MRB 1994
+ * art. 23 personenauto schedule: €64.24 + €17.27 per 100 kg above 900 kg.
  * EVs additionally receive a korting per the schedule (30% in 2026, decreasing).
  */
 export function calculateAnnualMrb(input: MrbInputs, data: TaxData): number {
