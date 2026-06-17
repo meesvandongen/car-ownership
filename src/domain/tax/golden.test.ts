@@ -114,37 +114,56 @@ describe("BPM — golden table", () => {
 });
 
 describe("MRB — golden table", () => {
+  // Annual MRB = rijksdeel×4 + brandstoftoeslag×4 + opcenten% × hoofdsom₁₉₉₅.
+  // @ 1500kg: rijksdeel 64.24+6×17.27 = 167.86/q; 1995 hoofdsom (annual) = 416.93
+  // (band 1451–1550). Opcenten is levied on the frozen hoofdsom, not the
+  // rijksdeel, and never on the brandstoftoeslag.
+  const rd1500 = 167.86;
+  const hs1500 = 416.93;
   const cases: Array<{
     name: string;
     weightKg: number;
     p: Powertrain;
     province: Province;
     taxYear: number;
+    lpgG3?: boolean;
+    dieselFijnstof?: boolean;
     expected: number;
   }> = [
-    // Petrol/Overijssel @ 1500kg: tier 196/q × 1.0 × (1+0.85) × 4.
-    { name: "Petrol 1500kg Overijssel 2026", weightKg: 1500, p: "petrol", province: "Overijssel", taxYear: 2026, expected: 196 * 1 * 1.85 * 4 },
-    // Diesel/Overijssel @ 1500kg: × 1.30.
-    { name: "Diesel 1500kg Overijssel 2026", weightKg: 1500, p: "diesel", province: "Overijssel", taxYear: 2026, expected: 196 * 1.3 * 1.85 * 4 },
-    // LPG/Overijssel @ 1500kg: × 1.40.
-    { name: "LPG 1500kg Overijssel 2026", weightKg: 1500, p: "lpg", province: "Overijssel", taxYear: 2026, expected: 196 * 1.4 * 1.85 * 4 },
-    // EV/Overijssel @ 1500kg in 2026: × 0.70 × (1−0.30) = × 0.49.
-    { name: "EV 1500kg Overijssel 2026", weightKg: 1500, p: "ev", province: "Overijssel", taxYear: 2026, expected: 196 * 0.7 * 1.85 * 4 * 0.7 },
+    // Petrol/Overijssel @ 1500kg.
+    { name: "Petrol 1500kg Overijssel 2026", weightKg: 1500, p: "petrol", province: "Overijssel", taxYear: 2026, expected: rd1500 * 4 + 0.822 * hs1500 },
+    // Diesel @ 1500kg: + dieseltoeslag 153.00 + 6×16.57 = 252.42 (opcenten-free).
+    { name: "Diesel 1500kg Overijssel 2026", weightKg: 1500, p: "diesel", province: "Overijssel", taxYear: 2026, expected: (rd1500 + 252.42) * 4 + 0.822 * hs1500 },
+    // Diesel + fijnstoftoeslag: +19% over (rijksdeel + dieseltoeslag).
+    { name: "Diesel 1500kg + fijnstof", weightKg: 1500, p: "diesel", province: "Overijssel", taxYear: 2026, dieselFijnstof: true, expected: (rd1500 + 252.42 + (rd1500 + 252.42) * 0.19) * 4 + 0.822 * hs1500 },
+    // LPG with G3 installation (default): toeslag 19.05 + 6×19.05 = 133.35.
+    { name: "LPG-G3 1500kg Overijssel 2026", weightKg: 1500, p: "lpg", province: "Overijssel", taxYear: 2026, expected: (rd1500 + 133.35) * 4 + 0.822 * hs1500 },
+    // LPG without G3: toeslag 172.08 + 6×18.22 = 281.40.
+    { name: "LPG (non-G3) 1500kg Overijssel 2026", weightKg: 1500, p: "lpg", province: "Overijssel", taxYear: 2026, lpgG3: false, expected: (rd1500 + 281.40) * 4 + 0.822 * hs1500 },
+    // EV/Overijssel @ 1500kg in 2026: full MRB × (1−0.30) korting (art. 23b → pay 70%).
+    { name: "EV 1500kg Overijssel 2026", weightKg: 1500, p: "ev", province: "Overijssel", taxYear: 2026, expected: (rd1500 * 4 + 0.822 * hs1500) * 0.7 },
     // EV/Overijssel @ 1500kg in 2030: 0% korting.
-    { name: "EV 1500kg Overijssel 2030", weightKg: 1500, p: "ev", province: "Overijssel", taxYear: 2030, expected: 196 * 0.7 * 1.85 * 4 * 1.0 },
-    // Different province: Groningen has highest opcenten 1.05.
-    { name: "Petrol 1500kg Groningen", weightKg: 1500, p: "petrol", province: "Groningen", taxYear: 2026, expected: 196 * 1 * 2.05 * 4 },
-    { name: "Petrol 1500kg Noord-Holland (lowest)", weightKg: 1500, p: "petrol", province: "Noord-Holland", taxYear: 2026, expected: 196 * 1 * 1.78 * 4 },
-    // Light car: tier 21/q for 600kg.
-    { name: "Petrol 600kg Overijssel", weightKg: 600, p: "petrol", province: "Overijssel", taxYear: 2026, expected: 21 * 1 * 1.85 * 4 },
-    // Heavy car: tier 720/q for 3000kg.
-    { name: "Petrol 3000kg Overijssel", weightKg: 3000, p: "petrol", province: "Overijssel", taxYear: 2026, expected: 720 * 1 * 1.85 * 4 },
+    { name: "EV 1500kg Overijssel 2030", weightKg: 1500, p: "ev", province: "Overijssel", taxYear: 2030, expected: (rd1500 * 4 + 0.822 * hs1500) * 1.0 },
+    // Different province: Zuid-Holland has highest opcenten (1.044); Groningen 0.957.
+    { name: "Petrol 1500kg Groningen", weightKg: 1500, p: "petrol", province: "Groningen", taxYear: 2026, expected: rd1500 * 4 + 0.957 * hs1500 },
+    { name: "Petrol 1500kg Noord-Holland (lowest)", weightKg: 1500, p: "petrol", province: "Noord-Holland", taxYear: 2026, expected: rd1500 * 4 + 0.821 * hs1500 },
+    // Light car @ 600kg: rijksdeel 29.12/q, hoofdsom 69.34 (band 551–650).
+    { name: "Petrol 600kg Overijssel", weightKg: 600, p: "petrol", province: "Overijssel", taxYear: 2026, expected: 29.12 * 4 + 0.822 * 69.34 },
+    // Heavy car @ 3000kg: rijksdeel 426.91/q; hoofdsom 463.67 + 14×46.74 = 1118.03.
+    { name: "Petrol 3000kg Overijssel", weightKg: 3000, p: "petrol", province: "Overijssel", taxYear: 2026, expected: 426.91 * 4 + 0.822 * 1118.03 },
   ];
 
   for (const c of cases) {
     it(c.name, () => {
       const got = calculateAnnualMrb(
-        { weightKg: c.weightKg, powertrain: c.p, province: c.province, taxYear: c.taxYear },
+        {
+          weightKg: c.weightKg,
+          powertrain: c.p,
+          province: c.province,
+          taxYear: c.taxYear,
+          lpgG3: c.lpgG3,
+          dieselFijnstof: c.dieselFijnstof,
+        },
         data,
       );
       expect(got).toBeCloseTo(c.expected, 2);

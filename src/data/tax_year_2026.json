@@ -37,35 +37,51 @@
     "lockMonths": 60
   },
   "mrb": {
-    "weightTable": [
-      { "upTo": 600, "quarterly": 21 },
-      { "upTo": 700, "quarterly": 32 },
-      { "upTo": 800, "quarterly": 49 },
-      { "upTo": 900, "quarterly": 65 },
-      { "upTo": 1000, "quarterly": 79 },
-      { "upTo": 1100, "quarterly": 100 },
-      { "upTo": 1200, "quarterly": 119 },
-      { "upTo": 1300, "quarterly": 142 },
-      { "upTo": 1400, "quarterly": 168 },
-      { "upTo": 1500, "quarterly": 196 },
-      { "upTo": 1600, "quarterly": 226 },
-      { "upTo": 1700, "quarterly": 257 },
-      { "upTo": 1800, "quarterly": 290 },
-      { "upTo": 1900, "quarterly": 323 },
-      { "upTo": 2000, "quarterly": 358 },
-      { "upTo": 2100, "quarterly": 393 },
-      { "upTo": 2200, "quarterly": 430 },
-      { "upTo": 2300, "quarterly": 467 },
-      { "upTo": 2500, "quarterly": 537 },
-      { "upTo": 3000, "quarterly": 720 }
+    "rijksdeel": [
+      { "fromKg": 0, "base": 21.46, "per100Above": 0 },
+      { "fromKg": 600, "base": 29.12, "per100Above": 0 },
+      { "fromKg": 700, "base": 37.00, "per100Above": 0 },
+      { "fromKg": 800, "base": 48.30, "per100Above": 0 },
+      { "fromKg": 900, "base": 64.24, "per100Above": 17.27 },
+      { "fromKg": 3300, "base": 474.12, "per100Above": 12.00 }
     ],
-    "powertrainMultipliers": {
-      "ev": 0.70,
-      "hydrogen": 0.70,
-      "phev": 1.00,
-      "petrol": 1.00,
-      "diesel": 1.30,
-      "lpg": 1.40
+    "fuelSurcharge": {
+      "diesel": [
+        { "fromKg": 0, "base": 84.14, "per100Above": 0 },
+        { "fromKg": 600, "base": 99.59, "per100Above": 0 },
+        { "fromKg": 700, "base": 115.03, "per100Above": 0 },
+        { "fromKg": 800, "base": 130.76, "per100Above": 0 },
+        { "fromKg": 900, "base": 153.00, "per100Above": 16.57 }
+      ],
+      "lpg": [
+        { "fromKg": 0, "base": 98.71, "per100Above": 0 },
+        { "fromKg": 600, "base": 118.32, "per100Above": 0 },
+        { "fromKg": 700, "base": 137.95, "per100Above": 0 },
+        { "fromKg": 800, "base": 157.54, "per100Above": 0 },
+        { "fromKg": 900, "base": 172.08, "per100Above": 18.22 }
+      ],
+      "lpgG3": [
+        { "fromKg": 0, "base": 0, "per100Above": 0 },
+        { "fromKg": 900, "base": 19.05, "per100Above": 19.05 }
+      ]
+    },
+    "dieselFijnstofToeslag": 0.19,
+    "opcentenHoofdsom": {
+      "bands": [
+        { "maxKg": 550, "amount": 57.99 },
+        { "maxKg": 650, "amount": 69.34 },
+        { "maxKg": 750, "amount": 81.59 },
+        { "maxKg": 850, "amount": 107.91 },
+        { "maxKg": 950, "amount": 136.50 },
+        { "maxKg": 1050, "amount": 183.24 },
+        { "maxKg": 1150, "amount": 229.98 },
+        { "maxKg": 1250, "amount": 276.72 },
+        { "maxKg": 1350, "amount": 323.45 },
+        { "maxKg": 1450, "amount": 370.19 },
+        { "maxKg": 1550, "amount": 416.93 },
+        { "maxKg": 1650, "amount": 463.67 }
+      ],
+      "above": { "thresholdKg": 1650, "base": 463.67, "per100Above": 46.74 }
     },
     "evKortingByYear": {
       "2026": 0.30,
@@ -76,18 +92,18 @@
     }
   },
   "provinces": {
-    "Drenthe": 0.92,
-    "Flevoland": 0.84,
-    "Friesland": 0.92,
-    "Gelderland": 1.01,
-    "Groningen": 1.05,
-    "Limburg": 0.93,
-    "Noord-Brabant": 0.81,
-    "Noord-Holland": 0.78,
-    "Overijssel": 0.85,
-    "Utrecht": 0.86,
-    "Zeeland": 0.94,
-    "Zuid-Holland": 1.02
+    "Drenthe": 0.920,
+    "Flevoland": 0.847,
+    "Friesland": 0.921,
+    "Gelderland": 0.983,
+    "Groningen": 0.957,
+    "Limburg": 0.885,
+    "Noord-Brabant": 0.870,
+    "Noord-Holland": 0.821,
+    "Overijssel": 0.822,
+    "Utrecht": 0.864,
+    "Zeeland": 0.844,
+    "Zuid-Holland": 1.044
   },
   "bpm": {
     "evFixed": 685,

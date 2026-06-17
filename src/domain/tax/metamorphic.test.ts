@@ -132,65 +132,52 @@ describe("BPM — metamorphic relations", () => {
 });
 
 describe("MRB — metamorphic relations", () => {
-  it("ratio MRB(any province A) / MRB(province B) is independent of weight (multiplicative)", () => {
-    // Provincial opcenten enter as a multiplicative factor — ratio between two
-    // provinces should be the same at any weight.
+  it("province difference MRB(A) − MRB(B) is additive (opcenten × hoofdsom) and fuel-independent", () => {
+    // Opcenten is opcenten% × the frozen 1995 hoofdsom — a fuel-independent
+    // additive term. So at a fixed weight the gap between two provinces is the
+    // same for petrol, diesel and LPG (the rijksdeel and brandstoftoeslag cancel).
     fc.assert(
       fc.property(
-        fc.constantFrom<Powertrain>("petrol", "diesel", "ev"),
         fc.constantFrom(...provinces),
         fc.constantFrom(...provinces),
         fc.double({ min: 100, max: 3000, noNaN: true }),
-        fc.double({ min: 100, max: 3000, noNaN: true }),
-        (powertrain, pA, pB, w1, w2) => {
-          if (data.provinces[pB] + 1 < 1e-6) return true;
-          const r1 =
-            calculateAnnualMrb(
-              { weightKg: w1, powertrain, province: pA, taxYear: 2026 },
-              data,
-            ) /
-            calculateAnnualMrb(
-              { weightKg: w1, powertrain, province: pB, taxYear: 2026 },
-              data,
-            );
-          const r2 =
-            calculateAnnualMrb(
-              { weightKg: w2, powertrain, province: pA, taxYear: 2026 },
-              data,
-            ) /
-            calculateAnnualMrb(
-              { weightKg: w2, powertrain, province: pB, taxYear: 2026 },
-              data,
-            );
-          return Math.abs(r1 - r2) < 1e-9;
+        (pA, pB, w) => {
+          const delta = (powertrain: Powertrain) =>
+            calculateAnnualMrb({ weightKg: w, powertrain, province: pA, taxYear: 2026 }, data) -
+            calculateAnnualMrb({ weightKg: w, powertrain, province: pB, taxYear: 2026 }, data);
+          const petrolDelta = delta("petrol");
+          // Same province gap regardless of fuel (korting-free powertrains).
+          return (
+            Math.abs(petrolDelta - delta("diesel")) < 1e-9 &&
+            Math.abs(petrolDelta - delta("lpg")) < 1e-9 &&
+            Math.abs(petrolDelta - delta("phev")) < 1e-9
+          );
         },
       ),
       { numRuns: 500 },
     );
   });
 
-  it("MRB(diesel) / MRB(petrol) is exactly the diesel multiplier (1.30)", () => {
+  it("MRB(diesel) − MRB(petrol) is the dieseltoeslag, identical in every province", () => {
+    // The dieseltoeslag is opcenten-free, so the diesel/petrol gap at a given
+    // weight is a fixed national amount — the same in all 12 provinces.
     fc.assert(
       fc.property(
         fc.double({ min: 100, max: 3000, noNaN: true }),
         fc.constantFrom(...provinces),
-        (w, p) => {
-          const petrol = calculateAnnualMrb(
-            { weightKg: w, powertrain: "petrol", province: p, taxYear: 2026 },
-            data,
-          );
-          const diesel = calculateAnnualMrb(
-            { weightKg: w, powertrain: "diesel", province: p, taxYear: 2026 },
-            data,
-          );
-          return Math.abs(diesel / petrol - 1.3) < 1e-9;
+        fc.constantFrom(...provinces),
+        (w, pA, pB) => {
+          const gap = (p: Province) =>
+            calculateAnnualMrb({ weightKg: w, powertrain: "diesel", province: p, taxYear: 2026 }, data) -
+            calculateAnnualMrb({ weightKg: w, powertrain: "petrol", province: p, taxYear: 2026 }, data);
+          return gap(pA) > 0 && Math.abs(gap(pA) - gap(pB)) < 1e-9;
         },
       ),
       { numRuns: 500 },
     );
   });
 
-  it("MRB(EV at year Y) / MRB(petrol same vehicle) = 0.70 × (1 − korting[Y])", () => {
+  it("MRB(EV at year Y) / MRB(petrol same vehicle) = (1 − korting[Y]) (art. 23b)", () => {
     fc.assert(
       fc.property(
         fc.double({ min: 100, max: 3000, noNaN: true }),
@@ -206,7 +193,7 @@ describe("MRB — metamorphic relations", () => {
             data,
           );
           const korting = data.mrb.evKortingByYear[String(year)] ?? 0;
-          const expected = 0.7 * (1 - korting);
+          const expected = 1 - korting;
           return Math.abs(ev / petrol - expected) < 1e-9;
         },
       ),

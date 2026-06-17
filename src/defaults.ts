@@ -18,6 +18,8 @@ export const DEFAULT_VEHICLE: VehicleInputs = {
   detYear: 2026,
   consumptionKwhPer100km: 18,
   consumptionLper100km: 6.5,
+  lpgG3: true,
+  dieselFijnstof: false,
 };
 
 export const DEFAULT_OWNERSHIP: OwnershipInputs = {
