@@ -20,12 +20,13 @@ export interface MrbInputs {
 }
 
 /**
- * Quarterly amount from a weight-band table. The eigen massa is rounded up to
- * the next whole 100 kg (a 1250 kg car is taxed as 1300 kg), then the highest
- * band with `fromKg ≤ weight` applies: `base + (Δ100kg) × per100Above`.
+ * Quarterly amount from a weight-band table. The art. 23 tariff counts only
+ * complete 100 kg above a band's threshold, i.e. the eigen massa is rounded
+ * DOWN to the next whole 100 kg (a 1440 kg car is taxed as 1400 kg), then the
+ * highest band with `fromKg ≤ weight` applies: `base + (Δ100kg) × per100Above`.
  */
 function bandAmount(weightKg: number, bands: MrbBand[]): number {
-  const rounded = Math.ceil(Math.max(weightKg, 0) / 100) * 100;
+  const rounded = Math.floor(Math.max(weightKg, 0) / 100) * 100;
   let band = bands[0];
   for (const b of bands) {
     if (rounded >= b.fromKg) band = b;
