@@ -82,7 +82,10 @@ export function evaluateOwnership(
   const withExcess = computeIncomeTax(salary.bruto + taxableExcessAnnual, data);
   const excessNetGain = withExcess.netIncome - baseTax.netIncome;
 
-  const monthlyMrb = annualMrb / 12;
+  // The belastingdienst assesses MRB per tijdvak van 3 maanden and rounds that
+  // amount down to whole euros; the monthly incasso is 1/3 of the quarterly.
+  const billedQuarterlyMrb = Math.floor(annualMrb / 4);
+  const monthlyMrb = billedQuarterlyMrb / 3;
   const monthlyInsurance = ownership.insurancePerMonth;
   const monthlyMaintenance = ownership.maintenancePerYear / 12;
   const monthlyFuel = fuelAnnual / 12;

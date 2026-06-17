@@ -56,6 +56,11 @@ function opcentenHoofdsom(weightKg: number, data: TaxData): number {
  * provinciale opcenten is a percentage of the frozen 1 April 1995 hoofdsom —
  * NOT the current rijksdeel, and never the brandstoftoeslag. Diesel and (non-G3)
  * LPG add an additive toeslag; EV/hydrogen receive the art. 23b korting.
+ *
+ * This returns the exact (unrounded) statutory annual amount. The belastingdienst
+ * additionally rounds each tijdvak (quarter) down to whole euros before billing;
+ * that rounding is applied where the actual cost is reported (the ownership
+ * scenario), not here, so this stays a clean algebraic function.
  */
 export function calculateAnnualMrb(input: MrbInputs, data: TaxData): number {
   const rijksdeelQuarterly = bandAmount(input.weightKg, data.mrb.rijksdeel);
