@@ -31,6 +31,16 @@ export interface VehicleInputs {
   detYear: number;
   consumptionKwhPer100km: number;
   consumptionLper100km: number;
+  /**
+   * LPG only: the car has a certified G3/R115 gas installation, which pays the
+   * reduced MRB gas toeslag. Defaults to true. Ignored for other powertrains.
+   */
+  lpgG3?: boolean;
+  /**
+   * Diesel only: older diesel with PM emission above the limit (no particulate
+   * filter), which owes the 19% MRB fijnstoftoeslag. Defaults to false.
+   */
+  dieselFijnstof?: boolean;
 }
 
 export interface Car {

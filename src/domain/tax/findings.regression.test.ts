@@ -206,12 +206,14 @@ describe("tax calculation — regression tests for explorer findings", () => {
     });
   });
 
-  describe("MRB — weight-tier cliffs", () => {
-    // Tier boundary 2500→2501 jumps from the 2500-tier (340.56/q) to the
-    // 3000-tier (426.91/q): (426.91 − 340.56) × (1+0.822) × 4 = €629.50 (petrol).
-    const boundaryJump = (426.91 - 340.56) * 1.822 * 4;
+  describe("MRB — uniform per-100kg steps (no tier cliffs)", () => {
+    // The old hand-maintained weight table had coarse tiers (…2300, 2500, 3000)
+    // that produced large cliffs. The art. 23 schedule is a flat €17.27/100 kg
+    // above 900 kg, so crossing any 100 kg boundary is a single uniform step —
+    // no oversized jumps. Weight rounds up, so 2501 kg is taxed as 2600 kg.
+    const petrolStep = 17.27 * 1.822 * 4; // ≈ €125.90 (rijksdeel × opcenten × 4)
 
-    it("petrol/Overijssel: MRB jumps €629.50 over the 2500→2501 kg tier boundary", () => {
+    it("petrol/Overijssel: 2500→2501 kg is one €17.27/100kg step", () => {
       const at2500 = calculateAnnualMrb(
         { weightKg: 2500, powertrain: "petrol", province: "Overijssel", taxYear: 2026 },
         data,
@@ -220,10 +222,12 @@ describe("tax calculation — regression tests for explorer findings", () => {
         { weightKg: 2501, powertrain: "petrol", province: "Overijssel", taxYear: 2026 },
         data,
       );
-      expect(at2501 - at2500).toBeCloseTo(boundaryJump, 1);
+      expect(at2501 - at2500).toBeCloseTo(petrolStep, 1);
     });
 
-    it("diesel/Overijssel: same boundary, jump scales with diesel multiplier 1.30", () => {
+    it("diesel/Overijssel: the step also includes the €16.57/100kg dieseltoeslag", () => {
+      // Diesel step = rijksdeel step (with opcenten) + dieseltoeslag step (no opcenten).
+      const dieselStep = (17.27 * 1.822 + 16.57) * 4;
       const at2500 = calculateAnnualMrb(
         { weightKg: 2500, powertrain: "diesel", province: "Overijssel", taxYear: 2026 },
         data,
@@ -232,37 +236,24 @@ describe("tax calculation — regression tests for explorer findings", () => {
         { weightKg: 2501, powertrain: "diesel", province: "Overijssel", taxYear: 2026 },
         data,
       );
-      expect(at2501 - at2500).toBeCloseTo(boundaryJump * 1.3, 1);
+      expect(at2501 - at2500).toBeCloseTo(dieselStep, 1);
     });
 
-    it("LPG/Overijssel: same boundary, jump scales with LPG multiplier 1.40", () => {
-      const at2500 = calculateAnnualMrb(
-        { weightKg: 2500, powertrain: "lpg", province: "Overijssel", taxYear: 2026 },
-        data,
-      );
-      const at2501 = calculateAnnualMrb(
-        { weightKg: 2501, powertrain: "lpg", province: "Overijssel", taxYear: 2026 },
-        data,
-      );
-      expect(at2501 - at2500).toBeCloseTo(boundaryJump * 1.4, 1);
+    it("every 100kg boundary up to 3000 kg is the same petrol step (no cliffs)", () => {
+      for (let w = 1000; w < 3000; w += 100) {
+        const lo = calculateAnnualMrb(
+          { weightKg: w, powertrain: "petrol", province: "Overijssel", taxYear: 2026 },
+          data,
+        );
+        const hi = calculateAnnualMrb(
+          { weightKg: w + 100, powertrain: "petrol", province: "Overijssel", taxYear: 2026 },
+          data,
+        );
+        expect(hi - lo).toBeCloseTo(petrolStep, 1);
+      }
     });
 
-    it("EV/Overijssel: same boundary, jump scales with 0.70 (1−korting) in 2026", () => {
-      const at2500 = calculateAnnualMrb(
-        { weightKg: 2500, powertrain: "ev", province: "Overijssel", taxYear: 2026 },
-        data,
-      );
-      const at2501 = calculateAnnualMrb(
-        { weightKg: 2501, powertrain: "ev", province: "Overijssel", taxYear: 2026 },
-        data,
-      );
-      expect(at2501 - at2500).toBeCloseTo(boundaryJump * 0.7, 1);
-    });
-
-    it("weights above the highest tier (3000 kg) clamp to the last tier", () => {
-      // The current behaviour for weights > 3000 kg is to use the last tier
-      // (€426.91/quarter). This is a deliberate clamp; the law's tariffs above
-      // 3000 kg fall outside personenauto territory.
+    it("MRB keeps rising above 3000 kg (no clamp)", () => {
       const at3000 = calculateAnnualMrb(
         { weightKg: 3000, powertrain: "petrol", province: "Overijssel", taxYear: 2026 },
         data,
@@ -271,7 +262,7 @@ describe("tax calculation — regression tests for explorer findings", () => {
         { weightKg: 3500, powertrain: "petrol", province: "Overijssel", taxYear: 2026 },
         data,
       );
-      expect(at3000).toBe(at3500);
+      expect(at3500).toBeGreaterThan(at3000);
     });
   });
 

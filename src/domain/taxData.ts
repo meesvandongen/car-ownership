@@ -1,5 +1,11 @@
 import taxYear2026 from "../data/tax_year_2026.json";
 
+export interface MrbBand {
+  fromKg: number;
+  base: number;
+  per100Above: number;
+}
+
 export interface BijtellingRate {
   ev: number;
   evCap: number | null;
@@ -35,8 +41,22 @@ export interface TaxData {
     lockMonths: number;
   };
   mrb: {
-    weightTable: { upTo: number; quarterly: number }[];
-    powertrainMultipliers: Record<string, number>;
+    // Quarterly rijksdeel (Wet MRB 1994 art. 23) and brandstoftoeslag (art. 23
+    // lid 2/3) as weight bands. For an eigen massa rounded up to the next whole
+    // 100 kg, pick the highest band with `fromKg ≤ weight`; the amount is
+    // `base + ((weight − fromKg) / 100) × per100Above`.
+    rijksdeel: MrbBand[];
+    fuelSurcharge: {
+      diesel: MrbBand[];
+      // LPG / overige brandstof without a certified gas installation.
+      lpg: MrbBand[];
+      // LPG/CNG/LNG with a G3 or R115 installation (reduced toeslag).
+      lpgG3: MrbBand[];
+    };
+    // Fijnstoftoeslag: a surcharge on (rijksdeel + dieseltoeslag) for diesels
+    // whose fijnstof (PM) emission exceeds the limit — older diesels without a
+    // particulate filter. Stored as a fraction (0.19 = 19%).
+    dieselFijnstofToeslag: number;
     evKortingByYear: Record<string, number>;
   };
   provinces: Record<string, number>;

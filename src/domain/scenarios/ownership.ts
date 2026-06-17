@@ -40,6 +40,8 @@ export function evaluateOwnership(
       powertrain: vehicle.powertrain,
       province: drivingProfile.province,
       taxYear: inputs.taxYear,
+      lpgG3: vehicle.lpgG3,
+      dieselFijnstof: vehicle.dieselFijnstof,
     },
     data,
   );

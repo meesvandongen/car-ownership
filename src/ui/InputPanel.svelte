@@ -301,6 +301,18 @@
         Consumption (L/100km)
         <input type="number" bind:value={activeCar.vehicle.consumptionLper100km} min="0" step="0.1" />
       </label>
+      {#if activeCar.vehicle.powertrain === "lpg"}
+        <label class="row" style="align-items: center;">
+          <input type="checkbox" bind:checked={activeCar.vehicle.lpgG3} style="width:auto;" />
+          <span>G3/R115 gas installation (lower MRB toeslag)</span>
+        </label>
+      {/if}
+      {#if activeCar.vehicle.powertrain === "diesel"}
+        <label class="row" style="align-items: center;">
+          <input type="checkbox" bind:checked={activeCar.vehicle.dieselFijnstof} style="width:auto;" />
+          <span>Fijnstoftoeslag (older diesel, no filter: +19% MRB)</span>
+        </label>
+      {/if}
     </div>
 
     <h3>Calculations on this car</h3>

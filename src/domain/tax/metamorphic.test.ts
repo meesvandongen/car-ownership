@@ -133,11 +133,13 @@ describe("BPM — metamorphic relations", () => {
 
 describe("MRB — metamorphic relations", () => {
   it("ratio MRB(any province A) / MRB(province B) is independent of weight (multiplicative)", () => {
-    // Provincial opcenten enter as a multiplicative factor — ratio between two
-    // provinces should be the same at any weight.
+    // For powertrains without a brandstoftoeslag the opcenten is the only
+    // province-dependent term and enters multiplicatively, so the ratio between
+    // two provinces is the same at any weight. (Diesel/LPG break this because
+    // their additive toeslag is opcenten-free — covered by the test below.)
     fc.assert(
       fc.property(
-        fc.constantFrom<Powertrain>("petrol", "diesel", "ev"),
+        fc.constantFrom<Powertrain>("petrol", "ev", "phev", "hydrogen"),
         fc.constantFrom(...provinces),
         fc.constantFrom(...provinces),
         fc.double({ min: 100, max: 3000, noNaN: true }),
@@ -169,21 +171,19 @@ describe("MRB — metamorphic relations", () => {
     );
   });
 
-  it("MRB(diesel) / MRB(petrol) is exactly the diesel multiplier (1.30)", () => {
+  it("MRB(diesel) − MRB(petrol) is the dieseltoeslag, identical in every province", () => {
+    // The dieseltoeslag is opcenten-free, so the diesel/petrol gap at a given
+    // weight is a fixed national amount — the same in all 12 provinces.
     fc.assert(
       fc.property(
         fc.double({ min: 100, max: 3000, noNaN: true }),
         fc.constantFrom(...provinces),
-        (w, p) => {
-          const petrol = calculateAnnualMrb(
-            { weightKg: w, powertrain: "petrol", province: p, taxYear: 2026 },
-            data,
-          );
-          const diesel = calculateAnnualMrb(
-            { weightKg: w, powertrain: "diesel", province: p, taxYear: 2026 },
-            data,
-          );
-          return Math.abs(diesel / petrol - 1.3) < 1e-9;
+        fc.constantFrom(...provinces),
+        (w, pA, pB) => {
+          const gap = (p: Province) =>
+            calculateAnnualMrb({ weightKg: w, powertrain: "diesel", province: p, taxYear: 2026 }, data) -
+            calculateAnnualMrb({ weightKg: w, powertrain: "petrol", province: p, taxYear: 2026 }, data);
+          return gap(pA) > 0 && Math.abs(gap(pA) - gap(pB)) < 1e-9;
         },
       ),
       { numRuns: 500 },
